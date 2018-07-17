@@ -1,27 +1,30 @@
+# Pre-Requisites
+
 * Working Python Environment Minimum need Python3
 * Defining Functions, Passing arguments, Returning Values
 
-   ### What are  position arguments, default arguments,keyword arguments, *args and **kwargs
+## What are  position arguments, default arguments,keyword arguments, *args and **kwargs
 
-    * Position argumens are simply arguments the values are passed by position
-    * keyword argument are same arguments like above but values are passed with the name or keyword, so the position does not matter
-    * default argument are those in which there is a default value for the argument which is taken when no value is passed
-    * *args are seen as a tuple where we can pass any number of values. You would use *args when you're not sure how many arguments might be passed to your function, i.e. it allows you pass an arbitrary number of arguments to your function.
-    * If both ** and * arguments are present then the format is 
+* Position argumens are simply arguments the values are passed by position
+* keyword argument are same arguments like above but values are passed with the name or keyword, so the position does not matter
+* default argument are those in which there is a default value for the argument which is taken when no value is passed
+* `*args` are seen as a tuple where we can pass any number of values. You would use `*args` when you are not sure how many arguments might be passed to your function, i.e. it allows you to pass an arbitrary number of arguments to your function.
+* If both `*args` and `**kargs` arguments are present then the format is 
+```python
     def function(arg1, arg2, *args, kwarg1, kwarg2, **kwarg)
 
-    ```python
+    
     >>> def print_everything(*args):
         for count, thing in enumerate(args):
     ...         print( '{0}. {1}'.format(count, thing))
     ...
     >>> print_everything('apple', 'banana', 'cabbage')
-    0. apple
-    1. banana
-    2. cabbage
-    ```
+    1. apple
+    2. banana
+    3. cabbage
+```
 
-    * **kwargs are dictionary arguments where we can pass any number of named arguments which we haven't defined before
+* `**kwargs` are dictionary arguments where we can pass any number of named arguments which we haven't defined before
 
     ```python
     >>> def table_things(**kwargs):
@@ -33,7 +36,7 @@
     apple = fruit
     ```
 
-    * You can also use the `*` and `**` syntax when calling a function. For example
+* You can also use the `*` and `**` syntax when calling a function. For example
     
     ```python
     >>> def print_three_things(a, b, c):
@@ -44,14 +47,96 @@
     a = aardvark, b = baboon, c = cat
     ```
 
-* Be able to work with basic single file modules in python. Creating importing and executing
+* Be able to work with basic single file modules(programs) in python. Creating importing and executing
 
-    For creating a module we create a simple script and save it as `.py`. When we want to make it import ready we have to wrap the main tasks in the `if __name__ == "__main__"` this will avoid running the entire program when we import it. There are two ways to execute the python, either the script directly or import it and access the functions. 
+    * There are two ways to execute the python, either the script directly or import it and access the functions. 
+    * For creating a module we create a simple script and save it as `.py`. We can run this simple script by going to command prompt and typing `python name.py`.
+    *  When we want to make it import usable we have to wrap the main tasks in the `if __name__ == "__main__"` this will avoid running the entire program when we import it. 
 
 * Built-in types. int, float, str, list, dict and set
+    
+* int
+
+```python
+>>> int(2)
+2
+>>> int(2.2)
+2
+>>> int('hello')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ValueError: invalid literal for int() with base 10: 'hello'
+```
+
+* float
+
+```python
+>>> float(2.2)
+2.2
+>>> float(1.3456789)
+1.3456789
+```
+
+* str
+```python
+>>> str('hello')
+'hello'
+>>> str(123)
+'123'
+>>> str([1,2,3])
+'[1, 2, 3]'
+```
+* list
+```python
+>>> a = [1,2,3,'hello']
+>>> type(a)
+<class 'list'>
+>>> s = 'hello'
+>>> type(s)
+<class 'str'>
+>>> b = list(s)
+>>> b
+['h', 'e', 'l', 'l', 'o']
+```
+* dict
+```python
+>>> dicti = {'Hello':123, 'World':456}
+>>> for key, items in dicti.items():
+...     print( '{0} = {1}'.format(key, items))
+...
+Hello = 123
+World = 456
+```
+* set
+    *  set is used to get a list of unique items. The syntax is `{}`
+    *  set is used to filter a list of repeating items
+    *  since `{}` is also a dictionary we give `a = set()` to define an empty set
+```python
+>>> a_set = {1,1,2,3}
+>>> a_set
+{1, 2, 3}
+>>> a_list = [1,1,2,3,4,1,2,3]
+>>> a_list
+[1, 1, 2, 3, 4, 1, 2, 3]
+>>> b_set = set(a_list)
+>>> b_set
+{1, 2, 3, 4}
+>>> a_set = {}
+>>> type(a_set)
+<class 'dict'>
+>>> a_set = set()
+>>> type(a_set)
+<class 'set'>
+>>> a_set
+set()
+```
 * Python single inheritance
 
     When you inherit from one class, using super()
+```python
+TODO
+```
+
 * Instance attributes and Class attributes
 
     Class attributes are owned by class itself and instance attributes are owned by instances of the class. 
