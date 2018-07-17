@@ -23,7 +23,7 @@ It's best practice to avoid relative Import
 
 When we do `from module import *` it will import all modules in our `locals()` space. If we use `__all__` then we can restrict this by specific all the modules we want it to load
 
-![](allModule.png)
+![](./img/allModule.png)
 
 # Namespace Packages
 
