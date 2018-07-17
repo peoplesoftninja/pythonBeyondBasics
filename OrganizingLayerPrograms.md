@@ -11,9 +11,9 @@ Both packagge and module are of type module. The package has a dunder method `__
 
 # Relative Import
 
-![](absoluteimport.png)
+![](./img/absoluteimport.png)
 
-![](relativeImport.png)
+![](./img/relativeImport.png)
 
 In the above if you want to go a package up that's parent package you will use `..`
 
@@ -32,11 +32,11 @@ When we do `from module import *` it will import all modules in our `locals()` s
 * This was implemented in 2012 in Python
 * How does Python find the packages during import if no `__init.py__`?
 
-![](namespaceAlogirthm.png)
+![](./img/namespaceAlogirthm.png)
 
-![](solutionExamplePart1.png)
+![](./img/solutionExamplePart1.png)
 
-![](solutionExamplePart2.png)
+![](./img/solutionExamplePart2.png)
 
 # Executable directory
 
@@ -44,6 +44,6 @@ These are the one which contains an entry point for Python Execution
 
 # Recommended Project Structure
 
-![](recommendedProject.png)
+![](./img/recommendedProject.png)
 
-![](summaryOrganizing.png)
+![](./img/summaryOrganizing.png)

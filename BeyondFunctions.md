@@ -1,7 +1,7 @@
 
 Position Argument and Keyword Argument
 
-![](positionKeyword.png)
+![](./img/positionKeyword.png)
 
 The choice that an argument is position or keyword is based on the function call, NOT on function definition
 
@@ -49,7 +49,7 @@ In this example the program is not written, but heavy REPL is used.
 ```
 # Conditional Expression
 
-![](conditionalExpression.png)
+![](./img/conditionalExpression.png)
 
 ```python
 >>> def seq_class(immutable):
@@ -92,7 +92,7 @@ Sorting by last name
 ['Marcus Arellius', 'Hamid Ghazali', 'Immanuel Kant', 'Federik Neitzsche', 'Ahmad Rushd', 'Bernard Russell']
 ```
 
-![](lamdaregudiff.png)
+![](./img/lamdaregudiff.png)
 
 # Transposing Tables
 
