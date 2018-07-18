@@ -134,7 +134,95 @@ set()
 
     When you inherit from one class, using super()
 ```python
-TODO
+class PrintSquare():
+    def printa(self, value):
+        print(value * value)
+
+
+class DoNothing(PrintSquare):
+    def printb(self, value):
+        super().printa(value)
+
+
+b = DoNothing()
+b.printb(5)
+```
+    
+`super()` is usually used while initializing
+
+Example without `super()`. As seen below `super()` is not needed if we don't want to initizalize any new variable
+
+```python
+class Employee:
+
+    raise_amt = 1.04  # Class Variable
+
+    def __init__(self, first, last, pay):
+        self.first = first
+        self.last = last
+        self.email = self.first + '.' + self.last + '@email.com'
+        self.pay = pay
+
+    def fullname(self):
+        return '{} {}'.format(self.first, self.last)
+
+    def apply_raise(self):
+        self.pay = int(self.pay * self.raise_amt)
+
+
+class Developer(Employee):
+    pass
+
+dev_1 = Developer('Ninja', 'Rock', 65000)
+
+print(dev_1.pay)
+dev_1.apply_raise()
+print('{} {}'.format(dev_1.fullname(), dev_1.pay))
+
+```
+
+If we want to intialize then the example is shown below. One another thing which is mentioned here is the class variable. Class value can be overwritten as shown
+
+```python
+class Employee:
+
+    raise_amt = 1.04  # Class Variable
+
+    def __init__(self, first, last, pay):
+        self.first = first
+        self.last = last
+        self.email = self.first + '.' + self.last + '@email.com'
+        self.pay = pay
+
+    def fullname(self):
+        return '{} {}'.format(self.first, self.last)
+
+    def apply_raise(self):
+        self.pay = int(self.pay * self.raise_amt)
+
+
+class Developer(Employee):
+    pass
+
+
+class Lawyer(Employee):
+    raise_amt = 2.0
+
+
+class HR(Employee):
+    def __init__(self, first, last, pay, school):
+        super().__init__(first, last, pay)
+        self.school = school
+
+law_1 = Lawyer('Mojo', 'Birla', 10000)
+print('{} {}'.format(law_1.fullname(), law_1.pay))
+law_1.apply_raise()
+print('{} {}'.format(law_1.fullname(), law_1.pay))
+
+Mojo Birla 10000
+Mojo Birla 20000
+[Finished in 0.2s]
+
 ```
 
 * Instance attributes and Class attributes
@@ -165,9 +253,66 @@ TODO
     ```
 
 * Raising and handling exception Raising Exceptions, Catching Exceptions, Finally, defining your own exception
+
+example without exception
+
+```python
+print(1/0)
+
+ZeroDivisionError: division by zero
+
+```
+
+example with exception
+
+```python
+try:
+    1 / 0
+except Exception as e:
+    print(e)
+division by zero
+[Finished in 0.3s]
+```
+
 * Iterables and iterators. For-loop, next function, 
 * Classes with methods
 * Reading and writing text files and binary files
 * unittest and debugging
+
+The `.` indicates the number of test passed
+```python
+practice.py
+def add(x, y):
+    """Add function"""
+    return x + y
+
+practice_test.py
+import unittest
+import practice
+
+
+class TestCalc(unittest.TestCase):
+
+    def test_add(self):
+        result = practice.add(8, 9)
+        self.assertEqual(result, 17)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK
+[Finished in 0.6s]
+
+```
+
+![](./img/TestCaseDebug.png)
+
+
 * special methods, double underscore methods aka dunder method `__<method name>__`
-* 
+
+[Youtube Tutorial](https://www.youtube.com/watch?v=3ohzBxoFHAY)
