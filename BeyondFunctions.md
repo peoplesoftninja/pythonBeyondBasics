@@ -84,6 +84,13 @@ The above can be written as
 lambda name: name.split()[-1]
 ```
 
+example
+
+```python
+last_name = lambda name: name.split()[-1]
+last_name("Arya Marie")
+>>>Marie
+```
 Sorting by last name
 
 ```python
