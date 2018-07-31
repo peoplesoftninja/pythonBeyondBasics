@@ -30,7 +30,7 @@ In this the entire program is written in the comment section as shown
 
 ```python
 from timeit import timeit
-timeit("""[x for x in range(100) if x%2==0]""",number=10)
+timeit("""[x for x in range(100) if x%2==0]""",number=10)# by default number = 1M
 0.00011691694476212433
 ```
 
@@ -44,7 +44,7 @@ In this example the program is not written, but heavy REPL is used.
 0.04567123936870205
 >>> timeit(setup="from __main__ import resolver", stmt="resolver('rekhta.com')",number=1)
 5.354974571325499e-06
->>> print("{:f}".format(_)) # the _ saves the last value and f is for float
+>>> print("{:f}".format(_)) # the _ saves the last value and f is for float, to control the decimals use {:.3f} for 3 decimals
 0.000005
 ```
 # Conditional Expression
