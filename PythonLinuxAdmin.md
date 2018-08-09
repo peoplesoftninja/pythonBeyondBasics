@@ -22,11 +22,13 @@
 
 * ipython3 is REPL+Shell
 * sudo apt-get install ipython3
+```python
 >>>automagic # to turn off, after this u need to give % befor every command
 >>>%automagic to turn on
 >>>alias findmysyslinks ls -l /etc/ | grep '^l'
 >>>run example.py
 >>>command(?) will give help
 >>>import xyz # to get all modules of xyx just give xyz. and tab
+```
 
 ## Managing file system with Module
