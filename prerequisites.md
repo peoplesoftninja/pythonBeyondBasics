@@ -75,6 +75,10 @@ ValueError: invalid literal for int() with base 10: 'hello'
 2.2
 >>> float(1.3456789)
 1.3456789
+>>> float(1.34567)
+1.34567
+>>> print('{0:.2f}'.format(_))
+1.35
 ```
 
 * str
@@ -106,6 +110,14 @@ ValueError: invalid literal for int() with base 10: 'hello'
 ...
 Hello = 123
 World = 456
+
+>>> dicti = {'Hello':123, 'World':456}
+>>> 'Hello' in dicti # is actually dicti.keys() by default
+True
+>>> 123 in dicti
+False
+>>> 123 in dicti.values()
+True
 ```
 * set
     *  set is used to get a list of unique items. The syntax is `{}`

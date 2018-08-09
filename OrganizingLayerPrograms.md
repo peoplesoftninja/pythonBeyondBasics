@@ -2,7 +2,7 @@
 # Packages
 
 * Difference between package and module
-Modules are usually files `xyz.py` and packages are at directory level but can also be said for files. 
+    * Modules are usually files `xyz.py` and packages are at directory level but can also be said for files. 
 
 ![](./img/packageModuleHeirarchy.png)
 
