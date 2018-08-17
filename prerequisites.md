@@ -5,6 +5,8 @@
 
 ## What are  position arguments, default arguments,keyword arguments, *args and **kwargs
 
+* When we define a function it has parameters and we call the function we pass arguments.
+* Arguments can be of many types like Position, Keyword, default
 * Position argumens are simply arguments the values are passed by position
 * keyword argument are same arguments like above but values are passed with the name or keyword, so the position does not matter
 * default argument are those in which there is a default value for the argument which is taken when no value is passed
@@ -102,7 +104,30 @@ ValueError: invalid literal for int() with base 10: 'hello'
 >>> b
 ['h', 'e', 'l', 'l', 'o']
 ```
+
+Deep(c=a[:]) vs Shallow copy(b=a)
+
+```python
+>>> a = [1,2,3,4]
+>>> b = a
+>>> c = a[:]
+>>> a
+[1, 2, 3, 4]
+>>> b
+[1, 2, 3, 4]
+>>> c
+[1, 2, 3, 4]
+>>> a[1] = 99
+>>> a
+[1, 99, 3, 4]
+>>> b
+[1, 99, 3, 4]
+>>> c
+[1, 2, 3, 4]
+```
 * dict
+
+This is also called as Hash in other languages. This is unordered, so when you do loop you may not get the same order again and again. List and Tuple both are ordered, unlike dictionary.
 ```python
 >>> dicti = {'Hello':123, 'World':456}
 >>> for key, items in dicti.items():
