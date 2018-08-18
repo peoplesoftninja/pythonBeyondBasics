@@ -1,6 +1,6 @@
 # Python Quick Start for Linux Admin
 
-## Why Python?
+# Why Python?
 
 * Easy to learn and write
 * REPL, can be used interactively
@@ -18,7 +18,7 @@
 
 ![](./img/ListofModules2.png)
 
-## ipython
+# ipython
 
 * ipython3 is REPL+Shell
 * sudo apt-get install ipython3
@@ -31,13 +31,13 @@
 >>>import xyz # to get all modules of xyx just give xyz. and tab
 ```
 
-## Managing file system with Module
+# Managing file system with Module
 
 * import os is used to provie a common interface to both Linux and Windows
 
 ![](./img/osCommands.png)
 
-### OS functions
+## OS functions
 
 ![](./img/osCommands2.png)
 
@@ -45,7 +45,7 @@
 
 ## Interacting with Linux System
 
-### Slicing
+## Slicing
 
 * Extracts part of a sequence to create a new sequence
 * Does not modify the original sequence
@@ -54,7 +54,7 @@
 
 ![](./img/slicingCommands.png)
 
-### Command Line Arguments
+## Command Line Arguments
 
 ![](./img/commandLine.png)
 
@@ -84,14 +84,14 @@ args = parser.parse_args()
 print(args.accumulate(args.integer))
 ```
 
-### Accessing the Environment
+## Accessing the Environment
 
 ```python
 >>> import os
 >>> os.environ
 ```
 
-### Files Streams and Filters
+## Files Streams and Filters
 
 ![](./img/fileLikeObjs.png)
 ![](./img/openFile.png)
@@ -159,7 +159,7 @@ else:
             print("Got an exception:{}".format(e), file=sys.stderr)
 ```
 
-### Signals
+## Signals
 
 Term = Terminate
 core = create cores
@@ -195,4 +195,100 @@ except IOError:
     name = 'Sleepy'
 
 print("hello {}".format(name))
+```
+
+# Combining Python with other tools
+
+## String vs Byte Objects
+
+* Python String is a sequence of unicode characters
+* Textual data in Linux is a sequence of bytes
+
+* Everything stored in computer is in the form of bytes
+* There are about 256 symbols which have a direct SINGLE byte for them, what about other languages?
+* Use two bytes, but that was not enough
+* Assign charcters to code points(integers) 1.1M code points, 110k assigned
+
+https://stackoverflow.com/questions/10060411/byte-string-vs-unicode-string-python
+
+```python
+>>> a = "foo"
+>>> type(a)
+<class 'str'>
+>>> a = b'foo'
+>>> type(a)
+<class 'bytes'>
+>>> a = r'foo'
+>>> type(a)
+<class 'str'>
+>>> a = b'foo'
+>>> type(a)
+<class 'bytes'>
+>>> a.decode()
+'foo'
+>>> type(a)
+<class 'bytes'>
+>>> a = a.decode()
+>>> type(a)
+<class 'str'>
+>>> a = 'foo'
+>>> type(a)
+<class 'str'>
+>>> a = a.encode()
+>>> type(a)
+<class 'bytes'>
+```
+
+## Subprocess
+
+```python
+#Demonstrating subprocess printing files > 10k bytes
+
+from subprocess import Popen, PIPE
+
+lister = Popen(["ls", "-l"], stdout=PIPE)
+
+for bytes in lister.stdout:
+    line = bytes.decode()
+    if line.startswith("total"):
+        continue
+    spline = line.split()
+    if int(spline[4]) > 1000:
+        print(spline[8])
+```
+## Mail
+
+![](./img/pythonSMTPMail.png)
+
+## Sample Program to check disk space in AIX /u01 folder
+
+```py
+#! /scs/bin/python3
+import subprocess
+import argparse
+import time
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--threshold', '-t', type=int, default=50)
+parser.add_argument('--repeat', '-r', action="store_true", default=False)
+args = parser.parse_args()
+
+threshold = 50  # default threshold percentage
+partition = "/u01"  # default partition
+
+df = subprocess.Popen(["df", "-g"], stdout=subprocess.PIPE)
+
+
+for line in df.stdout:
+    # split into space seperated fields
+    splitline = line.split()
+    u = splitline[6]
+    if u.decode() == partition:
+        while True:
+            if int(splitline[3][:-1]) > args.threshold:
+                print("Warning!, size of /u01 greater than {}%".format(args.threshold))
+            if args.repeat:
+                time.sleep(5)
+            else:
+                exit(0)
 ```
