@@ -516,3 +516,37 @@ for line in open("fstab.in"):
 
 outfile.close()
 ```
+
+# pathlib
+
+https://github.com/snth/pyconza17/blob/master/slides.md
+
+```py
+>>> from pathlib import Path
+>>> p = Path('.')
+>>> p
+WindowsPath('.')
+>>> p.absolute()
+WindowsPath('C:/Users/asyed/Documents/Book/PythonBeyondBasics')
+>>> str(p.absolute())
+'C:\\Users\\as\\Documents\\Book\\PythonBeyondBasics'
+>>> p.absolute().as_uri()
+'file:///C:/Users/as/Documents/Book/PythonBeyondBasics'
+>>> p.absolute().as_posix()
+'C:/Users/asyed/Documents/Book/PythonBeyondBasics'
+>>> [x for x in p.iterdir() if x.is_dir()]
+[WindowsPath('.git'), WindowsPath('img')]
+>>> [str(x) for x in p.iterdir() if x.is_dir()]
+>>> [str(x) for x in p.iterdir() if x.is_file()]
+['BeyondFunctions.md', 'OrganizingLayerPrograms.md', 'prerequisites.md', 'PythonLinuxAdmin.md', 'README.md']
+
+```
+
+# SysAdmin Course - Linux Academy
+
+## TODO
+
+* Print Python AWS Automation and close Tab
+* Check the installs suggested in LA course are in stanley or not?
+* Make a plan for AWS and Python for Aug/Sept
+* Start Haya Visa Process Submit
