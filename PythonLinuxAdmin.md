@@ -544,9 +544,341 @@ WindowsPath('C:/Users/asyed/Documents/Book/PythonBeyondBasics')
 
 # SysAdmin Course - Linux Academy
 
-## TODO
 
-* Print Python AWS Automation and close Tab
-* Check the installs suggested in LA course are in stanley or not?
-* Make a plan for AWS and Python for Aug/Sept
-* Start Haya Visa Process Submit
+
+
+## Setting up Centios Server
+
+yum is a package management tools it is used to install softwares easily
+
+* `yum update`
+* `yum groupinstall -y "development tools"`
+* `yum install -y lsof wget vim-enhanced words which`
+* wget = to install softwares 
+* which = to see where a program is installed
+* lsof = list open files to see which file is open by which process
+* vim-enhanced = better version of vim
+* words = words is a standard file on all Unix and Unix-like operating systems, and is simply a newline-delimited list of dictionary words. It is used, for instance, by spell-checking programs.
+
+```shell
+$ git config --global user.name "Your Name"
+$ git config --global user.email "your_email@example.com"
+$ curl https://raw.githubusercontent.com/linuxacademy/content-python3-sysadmin/master/helpers/bashrc -o ~/.bashrc
+$ curl https://raw.githubusercontent.com/linuxacademy/content-python3-sysadmin/master/helpers/vimrc -o ~/.vimrc
+```
+
+* the vimrc is used to edit the vim editor settings. In AIX this will be called ~/.exrc as it uses VI
+  
+Installing Python and other dependencies
+```shell
+$ sudo su -
+[root] $ yum groupinstall -y "development tools"
+[root] $ yum install -y \
+  libffi-devel \
+  zlib-devel \
+  bzip2-devel \
+  openssl-devel \
+  ncurses-devel \
+  sqlite-devel \
+  readline-devel \
+  tk-devel \
+  gdbm-devel \
+  db4-devel \
+  libpcap-devel \
+  xz-devel \
+  expat-devel
+
+[root ] $ cd /usr/src
+[root ] $ wget http://python.org/ftp/python/3.6.4/Python-3.6.4.tar.xz
+[root ] $ tar xf Python-3.6.4.tar.xz
+[root ] $ cd Python-3.6.4
+[root ] $ ./configure --enable-optimizations
+[root ] $ make altinstall # to make sure python which is already installed is not overwritten
+[root ] $ exit
+$ sudo pip3.6 install --upgrade pip # if problem make sure secure_path in /etc/sudoers file includes /usr/local/bin
+```
+
+to run a python file directly that is without using `python foo.py` you need to make `foo.py` executable. Once you make it executable you can fun it as `./foo.py`
+
+Once we’ve written our script, we’ll need to make it executable using `chmod u+x foo.py`
+
+
+## Standard Library Package
+
+[Documentation](https://docs.python.org/3/library/index.html)
+
+Use time module to create a start stop program
+
+```py
+import time
+
+currentTime = time.localtime()
+
+input("Enter any value to stop")
+
+stopTime = time.localtime()
+
+print(f"Program started at {time.strftime('%X',currentTime)}")
+print(f"Program stopped at {time.strftime('%X',stopTime)}")
+print(f"Seconds Program Running {time.strftime('%H:%M:%S',time.gmtime(time.mktime(stopTime) - time.mktime(currentTime)))}")
+```
+
+Use OS package specially `os.environ`
+
+[OS package](https://docs.python.org/3/library/os.html)
+
+Problem with os.environ is that it fails when trying to retrive a environment variable that is not set.
+
+```py
+import os
+
+stage = os.environ["STAGE"].upper()
+
+output = f"We're running in {stage}"
+
+if stage.startswith("PROD"):
+    output = "DANGER!!! - " + output
+
+print(output)
+```
+
+When running the above program if envir variable STAGE is set it works else fails. 
+
+*NOTE: to set environment variable from command prompt use `SETX STAGE XYZ`
+
+To get around this we use `os.getenv`
+
+## Interacting with Files
+
+[Open Documentation](https://docs.python.org/3/library/functions.html#open)
+
+```py
+>>> f = open('test.py','r')
+>>> type(f)
+<class '_io.TextIOWrapper'>
+```
+
+Read about the TextIOWrapper
+
+[i/o docmentation](https://docs.python.org/3/library/io.html#io-overview)
+
+cursor position is accessed via `seek`
+
+```py
+>>> f.read()
+'def helloFunction():\n\tprint("This works")\n\tnum = input("Enter a number")\n\tprint(num)\n\nhelloFunction()'
+>>> f.read()
+''
+>>> f.seek(0)
+0
+>>> f.read()
+'def helloFunction():\n\tprint("This works")\n\tnum = input("Enter a number")\n\tprint(num)\n\nhelloFunction()'
+>>> f.seek(7)
+7
+>>> f.read()
+'loFunction():\n\tprint("This works")\n\tnum = input("Enter a number")\n\tprint(num)\n\nhelloFunct
+```
+
+To close we need to specifically use `f.close()`
+
+```py
+>>> f.close()
+>>> f.read()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ValueError: I/O operation on closed file.
+```
+
+To avoid this we can use `with open()`
+
+```py
+>>> with open('test.py','r') as f:
+...     f.read()
+...
+'def helloFunction():\n\tprint("This works")\n\tnum = input("Enter a number")\n\tprint(num)\n\nhelloFunction()'
+>>> f.read() # read/write won't work out of the with loop as file is already closed
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ValueError: I/O operation on closed file
+```
+
+
+## Parsing Command Line Parameters
+
+[sys module](https://docs.python.org/3/library/sys.html)
+
+* Positional arguments are based on spaces unless we explicitly wrap the argument in quotes.
+* We can get a slice of the first index and after without worrying about it being empty.
+* We risk an IndexError if we assume that there will be an argument for a specific position and one isn’t given.
+
+```py
+import sys
+
+print(f"Positional arguments: {sys.argv[1:]}")
+print(f"First argument: {sys.argv[1]}")
+```
+
+```py
+$ param_echo testing
+Positional arguments: ['testing']
+First argument: testing
+$ param_echo testing testing12 'another argument'
+Positional arguments: ['testing', 'testing12', 'another argument']
+First argument: testing
+$ param_echo
+Positional arguments: []
+Traceback (most recent call last):
+  File "/home/user/bin/param_echo", line 6, in 
+    print(f"First argument: {sys.argv[1]}")
+IndexError: list index out of range
+```
+
+## argparse
+
+sys.argv is used for simple CL argument extractor. But if we need anything complex we need to use `argparse`
+
+[argparse documentation](https://docs.python.org/3/library/argparse.html)
+
+[Argument Parser Class](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser)
+
+Basic 3 steps structure
+
+```py
+import argparse
+
+parser = argparse.ArgumentParser()  # Step 1 Create parser object
+parser.add_argument('filename', help='the file to read')  # step 2 add argument name, -- means optional
+args = parser.parse_args()  # step 3 parse args to access them
+print(args.filename)
+
+```
+
+when we execute the file
+
+```shell
+$ reverse-file -h
+usage: reverse-file [-h] filename
+
+positional arguments:
+  filename    the file to read
+
+optional arguments:
+  -h, --help  show this help message and exit
+```
+
+To specify that an argument is a flag, we need to place two hyphens at the beginning of the flag’s name. We’ve used the `type` option for `add_argument` to state that we want the value converted to an integer, and we specified a shorter version of the flag as our second argument. See `###`
+
+```py
+import argparse
+
+parser = argparse.ArgumentParser()  
+parser.add_argument('filename', help='the file to read')  
+
+parser.add_argument('--limit', '-l', type=int, help='the number of lines to read') ###
+
+args = parser.parse_args() 
+
+print(args)
+```
+When we run the above
+
+```shell
+$ reverse-file --limit 5 testing.txt
+Namespace(filename='testing.txt', limit=5)
+```
+
+Next, we’ll add a `--version` flag. This one will be a little different because we’re going to use the `action` option to specify a string to print out when this flag is received. This uses a built-in action type of [version](https://docs.python.org/3/library/argparse.html#action) which we’ve found in the documentation
+
+*NOTE: once action is recived the script will not continue with the other execution
+
+```py
+import argparse
+
+parser = argparse.ArgumentParser(description='Read a file in reverse')
+parser.add_argument('filename', help='the file to read')
+parser.add_argument('--version', '-v', action='version', version='%(prog)s 1.0')
+parser.add_argument('--limit', '-l', type=int, help='the number of lines to read')
+parser.add_argument('--version', '-v', action='version', version='%(prog)s 1.0')
+
+args = parser.parse_args()
+print(args)
+```
+When we execute
+
+```shell
+reverse-file --version
+reverse-file 1.0
+```
+
+Adding business logic
+
+```py
+import argparse
+
+# Create Parse
+parser = argparse.ArgumentParser(description='Read a file in reverse')
+parser.add_argument('filename', help='the file to read')
+parser.add_argument('--version', '-v', action='version', version='%(prog)s 1.0')
+parser.add_argument('--limit', '-l', type=int, help='the number of lines to read')
+parser.add_argument('--version', '-v', action='version', version='%(prog)s 1.0')
+
+# Parse Arguments
+args = parser.parse_args()
+
+# Business Logic
+with open(args.filename) as f:
+    lines = f.readlines()  # return individual lines as a list
+    lines.reverse()  # reversing the list
+
+    if args.limit:
+        lines = lines[:args.limit]
+
+    for line in lines:
+        print(line.strip()[::-1])  # strip to get rid of /n
+```
+
+The above program is good but will fail if file doesn't exist for this we will add a `try/except/else/finally`
+
+[try statement](https://docs.python.org/3/reference/compound_stmts.html#the-try-statement)
+
+```py
+
+#Business Logic with try
+
+try:
+    f = open(args.filename)  # breaking with
+    limit = args.limit
+except FileNotFoundError as err:
+    print(f"Error: {err}")
+else:
+    with f:
+        lines = f.readlines()
+        lines.reverse()
+
+        if limit:
+            lines = lines[:limit]
+
+        for line in lines:
+            print(line.strip()[::-1])a
+```
+
+
+## TODO ( 2 hr 30 mins)
+
+## Exit Statuses
+
+5 mins
+## Execute Shell commands with Python
+20
+## Advanced Iteration with list Comprehension
+10 
+
+## Useful Standard Library Packages
+
+1 hr
+
+## Excercise and Quiz
+
+1 hr
+
+

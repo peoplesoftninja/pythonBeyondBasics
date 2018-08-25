@@ -144,6 +144,9 @@ False
 >>> 123 in dicti.values()
 True
 ```
+
+You can use tuple  as a key in a dict but not a list
+
 * set
     *  set is used to get a list of unique items. The syntax is `{}`
     *  set is used to filter a list of repeating items
