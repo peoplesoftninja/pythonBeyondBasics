@@ -644,7 +644,7 @@ print(output)
 
 When running the above program if envir variable STAGE is set it works else fails. 
 
-*NOTE: to set environment variable from command prompt use `SETX STAGE XYZ`
+*NOTE: to set environment variable from command prompt use `SETX STAGE XYZ`*
 
 To get around this we use `os.getenv`
 
@@ -789,14 +789,13 @@ Namespace(filename='testing.txt', limit=5)
 
 Next, we’ll add a `--version` flag. This one will be a little different because we’re going to use the `action` option to specify a string to print out when this flag is received. This uses a built-in action type of [version](https://docs.python.org/3/library/argparse.html#action) which we’ve found in the documentation
 
-*NOTE: once action is recived the script will not continue with the other execution
+*NOTE: once action is recived the script will not continue with the other execution*
 
 ```py
 import argparse
 
 parser = argparse.ArgumentParser(description='Read a file in reverse')
 parser.add_argument('filename', help='the file to read')
-parser.add_argument('--version', '-v', action='version', version='%(prog)s 1.0')
 parser.add_argument('--limit', '-l', type=int, help='the number of lines to read')
 parser.add_argument('--version', '-v', action='version', version='%(prog)s 1.0')
 
@@ -820,7 +819,7 @@ parser = argparse.ArgumentParser(description='Read a file in reverse')
 parser.add_argument('filename', help='the file to read')
 parser.add_argument('--version', '-v', action='version', version='%(prog)s 1.0')
 parser.add_argument('--limit', '-l', type=int, help='the number of lines to read')
-parser.add_argument('--version', '-v', action='version', version='%(prog)s 1.0')
+
 
 # Parse Arguments
 args = parser.parse_args()
@@ -867,16 +866,349 @@ else:
 
 ## Exit Statuses
 
-5 mins
-## Execute Shell commands with Python
-20
-## Advanced Iteration with list Comprehension
-10 
+[sys.exit documentation](https://docs.python.org/3/library/sys.html#sys.exit)
 
+When our reverse-file script receives a file that doesn’t exist, we show an error message, but we don’t set the exit status to 1 to be indicative of an error
+
+```shell
+$ reverse-file -l 2 fake.txt
+Error: [Errno 2] No such file or directory: 'fake.txt'
+~ $ echo $?
+0
+```
+
+Let’s use the sys.exit function to accomplish this: In cmd use `echo %errorlevel%` and in bash use `echo $?` to see the error code
+
+```py
+import argparse
+import sys
+
+parser = argparse.ArgumentParser(description='Read a file in reverse')
+parser.add_argument('filename', help='the file to read')
+parser.add_argument('--limit', '-l', type=int, help='the number of lines to read')
+parser.add_argument('--version', '-v', action='version', version='%(prog)s verison 1.0')
+
+args = parser.parse_args()
+
+try:
+    f = open(args.filename)
+    limit = args.limit
+except FileNotFoundError as err:
+    print(f"Error: {err}")
+    sys.exit(1) ## 
+else:
+    with f:
+        lines = f.readlines()
+        lines.reverse()
+
+        if limit:
+            lines = lines[:limit]
+
+        for line in lines:
+            print(line.strip()[::-1])
+```
+Now, if we try our script with a missing file, we will exit with the proper co
+
+```shell
+$ reverse-file -l 2 fake.txt
+Error: [Errno 2] No such file or directory: 'fake.txt'
+$ echo $?
+1
+```
+
+
+
+## Execute Shell commands with Python
+
+This won't work in windows
+
+[subprocess module](https://docs.python.org/3/library/subprocess.html)
+[subprocess.run](https://docs.python.org/3/library/subprocess.html#subprocess.run)
+[subprocess.completedProcess class](https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess)
+[subprocess.PIP](https://docs.python.org/3/library/subprocess.html#subprocess.PIPE)
+[bytes](https://docs.python.org/3/library/stdtypes.html#bytes)
+[subprocess.callprocesserror](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError)
+[pathlib](https://docs.python.org/3/library/pathlib.html)
+
+```py
+>>> import subprocess
+>>> proc = subprocess.run(['ls', '-l'])
+total 20
+drwxrwxr-x. 2 user user  54 Jan 28 15:36 bin
+drwxr-xr-x. 2 user user   6 Jan  7  2015 Desktop
+-rw-rw-r--. 1 user user  44 Jan 26 22:16 new_xmen.txt
+-rw-rw-r--. 1 user user  98 Jan 26 21:39 read_file.py
+-rw-rw-r--. 1 user user 431 Aug  6  2015 VNCHOWTO
+-rw-rw-r--. 1 user user  61 Jan 28 14:11 xmen_base.txt
+-rw-------. 1 user user  68 Mar 18  2016 xrdp-chansrv.log
+>>> proc
+CompletedProcess(args=['ls', '-l'], returncode=0)
+```
+
+Our proc variable is a CompletedProcess object, and this provides us with a lot of flexibility. We have access to the returncode attribute on our proc variable to ensure that it succeeded and returned a 0 to us. Notice that the ls command was executed and printed to the screen without us specifying to print anything. We can get around this by capturing STDOUT using a subprocess.PIPE.
+
+```py
+>>> proc = subprocess.run(
+...     ['ls', '-l'],
+...     stdout=subprocess.PIPE,
+...     stderr=subprocess.PIPE,
+... )
+>>> proc
+CompletedProcess(args=['ls', '-l'], returncode=0, stdout=b'total 20\ndrwxrwxr-x. 2 user user  54 Jan 28 15:36 bin\ndrwxr-xr-x. 2 user user   6 Jan  7  2015 Desktop\n-rw-rw-r--. 1 user user  44 Jan 26 22:16 new_xmen.txt\n-rw-rw-r--. 1 user user  98 Jan 26 21:39 read_file.py\n-rw-rw-r--. 1 user user 431 Aug  6  2015 VNCHOWTO\n-rw-rw-r--. 1 user user  61 Jan 28 14:11 xmen_base.txt\n-rw-------. 1 user user  68 Mar 18  2016 xrdp-chansrv.log\n', stderr=b'')
+>>> proc.stdout
+b'total 20\ndrwxrwxr-x. 2 user user  54 Jan 28 15:36 bin\ndrwxr-xr-x. 2 user user   6 Jan  7  2015 Desktop\n-rw-rw-r--. 1 user user  44 Jan 26 22:16 new_xmen.txt\n-rw-rw-r--. 1 user user  98 Jan 26 21:39 read_file.py\n-rw-rw-r--. 1 user user 431 Aug  6  2015 VNCHOWTO\n-rw-rw-r--. 1 user user  61 Jan 28 14:11 xmen_base.txt\n-rw-------. 1 user user  68 Mar 18  2016 xrdp-chansrv.log\n'
+```
+
+Now that we’ve captured the output to attributes on our proc variable, we can work with it from within our script and determine whether or not it should ever be printed. Take a look at this string that is prefixed with a b character. It is because it is a bytes object and not a string. The bytes type can only contain ASCII characters and won’t do anything special with escape sequences when printed. If we want to utilize this value as a string, we need to explicitly convert it using the bytes.decode method.
+
+*Note: Byte object has no coding, it is just raw data. Hence to convert it we use decode. decode() defaults to utf-8*
+
+```py
+>>> print(proc.stdout)
+b'total 20\ndrwxrwxr-x. 2 user user  54 Jan 28 15:36 bin\ndrwxr-xr-x. 2 user user   6 Jan  7  2015 Desktop\n-rw-rw-r--. 1 user user  44 Jan 26 22:16 new_xmen.txt\n-rw-rw-r--. 1 user user  98 Jan 26 21:39 read_file.py\n-rw-rw-r--. 1 user user 431 Aug  6  2015 VNCHOWTO\n-rw-rw-r--. 1 user user  61 Jan 28 14:11 xmen_base.txt\n-rw-------. 1 user user  68 Mar 18  2016 xrdp-chansrv.log\n'
+>>> print(proc.stdout.decode())
+total 20
+drwxrwxr-x. 2 user user  54 Jan 28 15:36 bin
+drwxr-xr-x. 2 user user   6 Jan  7  2015 Desktop
+-rw-rw-r--. 1 user user  44 Jan 26 22:16 new_xmen.txt
+-rw-rw-r--. 1 user user  98 Jan 26 21:39 read_file.py
+-rw-rw-r--. 1 user user 431 Aug  6  2015 VNCHOWTO
+-rw-rw-r--. 1 user user  61 Jan 28 14:11 xmen_base.txt
+-rw-------. 1 user user  68 Mar 18  2016 xrdp-chansrv.log
+```
+
+The subprocess.run function will not raise an error by default if you execute something that returns a non-zero exit status. Here’s an example of this
+
+```py
+>>> new_proc = subprocess.run(['cat', 'fake.txt'])
+cat: fake.txt: No such file or directory
+>>> new_proc
+CompletedProcess(args=['cat', 'fake.txt'], returncode=1)
+```
+In this situation, we might want to raise an error, and if we pass the check argument to the function, it will raise a subprocess.CalledProcessError if something goes wrong. This is helpful as we can use it in `try/except` block in the program to deal with errors
+
+```py
+>>> error_proc = subprocess.run(['cat', 'fake.txt'], check=True)
+cat: fake.txt: No such file or directory
+Traceback (most recent call last):
+  File "", line 1, in 
+  File "/usr/local/lib/python3.6/subprocess.py", line 418, in run
+    output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['cat', 'fake.txt']' returned non-zero exit status 1.
+```
+
+`subprocess.Popen` is used to store the process command to be used in the program later
+
+
+## Advanced Iteration with list Comprehension
+
+[List Comprehension Documentation](vhttps://docs.python.org/3/tutorial/datastructures.html#list-comprehensions)
+
+We’re going to write a script that takes a word that then returns all of the values in the “words” file on our machine (install words using `sudo yum install -y words`) that contain the word. Our first step will be writing the script using standard iteration, and then we’re going to refactor our script to utilize a list comprehension.
+
+```py
+#!/usr/bin/env python3.6
+
+import argparse
+
+parser = argparse.ArgumentParser(description='Search for words including partial word')
+parser.add_argument('snippet', help='partial (or complete) string to search for in words')
+
+args = parser.parse_args()
+snippet = args.snippet.lower()
+
+with open('/usr/share/dict/words') as f:
+  words = f.readlines()
+
+matches = []
+
+for word in words:
+   if snippet in word.lower():
+       matches.append(word)
+
+print(matches)
+```
+
+Rewriting the above code with list-comprehension
+
+```py
+
+# matches = []
+#for word in words:
+#   if snippet in word.lower():
+#       matches.append(word)
+#print(matches)
+
+
+print([word for word in words if snippet in word.lower()]) # This is equivalent to the above 5 lines
+
+```
 ## Useful Standard Library Packages
 
-1 hr
+Generating Random test data
 
+## random&json
+
+[random module](https://docs.python.org/3/library/random.html)
+[json module](https://docs.python.org/3/library/json.html)
+[range type](https://docs.python.org/3/library/stdtypes.html#range)
+
+```py
+import random
+import os
+import json
+count = int(os.getenv("FILESIZE", 100))  # if env variable not present it will take 100
+words = [word.strip() for word in open('/usr/share/dict/words').readlines()]
+for identifier in range(count):
+    amount = random.uniform(1.0, 1000)  # returns a random float between a and b
+    content = {
+        'topic': random.choice(words),  # returns as single random element from a list
+        'value': "%.2f" % amount
+
+    }
+    with open(f'./new/receipt--{identifier}.json', 'w') as f:
+        json.dump(content, f) # to write on json, to read use json.load()
+```
+
+
+
+## shutil&glob
+
+[shutil module](https://docs.python.org/3/library/shutil.html)
+[glob module](https://docs.python.org/3/library/glob.html)
+
+Some of the most used utilities in Linux are `mv`, `mkdir`, `cp`, `ls`, and `rm`. Thankfully, we don’t need to utilize subprocess to access the same functionality of these utilities because the standard library has us covered
+
+
+```py
+import os
+
+try:
+    os.mkdir("./processed")
+except OSError:
+    print("'processed' directory already exists")
+```
+Sometimes we need to search using regex in shell like
+
+```shell
+ls new/receipt--[1-5]*.json
+```
+
+The above we can do in a python program using glob
+
+```py
+receipts = glob.glob('./new/receipt-[0-9]*.json')
+subtotal = 0.0
+```
+
+using shutil and json.load
+
+```py
+import glob
+import os
+import shutil
+import json
+
+try:
+    os.mkdir("./processed")
+except OSError:
+    print("'processed' directory already exists")
+
+# Get a list of receipts
+receipts = glob.glob('./new/receipt-[0-9]*.json')
+subtotal = 0.0
+
+for path in receipts:
+    with open(path) as f:
+        content = json.load(f) # look json documentation to see the conversino of json data to python code
+        subtotal += float(content['value'])
+    name = path.split('/')[-1]
+    destination = f"./processed/{name}"
+    shutil.move(path, destination) # to move files
+    print(f"moved '{path}' to '{destination}'")
+
+print(f"Receipt subtotal: {subtotal:.2f}")
+```
+
+## re
+
+If we want to get only the even files then we can do it as below
+
+iglob is similar to glob but is used as iterator, so data is not stored in memory and is only generated when needed
+```py
+>>> import re
+>>> receipts = [f for f in glob.iglob('./new/receipt-[0-9]*.json') if re.match('./new/receipt-[0-9]*[02468].json', f)]
+>>> receipts
+['./new/receipt-0.json', './new/receipt-2.json', './new/receipt-4.json', './new/receipt-6.json', './new/receipt-8.json', './new/receipt-10.json', './new/receipt-12.json', './new/receipt-14.json', './new/receipt-16.json', './new/receipt-18.json']
+```
+
+Optimizing the above program using `iglob`, `string.replace` and `round`
+
+```py
+import glob
+import os
+import shutil
+import json
+
+try:
+    os.mkdir("./processed")
+except OSError:
+    print("'processed' directory already exists")
+
+subtotal = 0.0
+
+for path in glob.iglob('./new/receipt-[0-9]*.json'):
+    with open(path) as f:
+        content = json.load(f)
+        subtotal += float(content['value'])
+    destination = path.replace('new', 'processed')
+    shutil.move(path, destination)
+    print(f"moved '{path}' to '{destination}'")
+
+print(f"Receipt subtotal: ${round(subtotal, 2)}")
+```
+
+## TODO (Thursday 08/30 2 hrs)
+
+## Excercise and Quiz
+
+## Exercise: Handling Errors When Files Don't Exist
+
+30 minutes
+
+## Exercise: Interacting with External Commands
+
+30 minutes
+
+## Exercise: Setting Exit Status on Error
+
+10 minutes
+
+## Quiz
+
+15 minutes
+
+## Third Party Packages
+
+## pip
+
+5 minutes
+
+## virtualenv
+
+15 minutes
+
+## third party packages
+
+15 minutes
+
+
+
+# Lessons Learned
+
+* study max limit 2 hrs
+* estimation error 30 minutes
+* 
 ## Excercise and Quiz
 
 1 hr
