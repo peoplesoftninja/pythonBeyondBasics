@@ -1168,6 +1168,11 @@ for path in glob.iglob('./new/receipt-[0-9]*.json'):
 print(f"Receipt subtotal: ${round(subtotal, 2)}")
 ```
 
+# Lessons Learned
+
+* study max limit 2 hrs
+* estimation error 30 minutes
+
 ## TODO (Thursday 08/30 2 hrs)
 
 ## Excercise and Quiz
@@ -1203,14 +1208,5 @@ print(f"Receipt subtotal: ${round(subtotal, 2)}")
 15 minutes
 
 
-
-# Lessons Learned
-
-* study max limit 2 hrs
-* estimation error 30 minutes
-* 
-## Excercise and Quiz
-
-1 hr
 
 
