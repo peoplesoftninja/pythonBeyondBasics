@@ -1173,17 +1173,44 @@ print(f"Receipt subtotal: ${round(subtotal, 2)}")
 * study max limit 2 hrs
 * estimation error 30 minutes
 
-## TODO (Thursday 08/30 2 hrs)
 
-## Excercise and Quiz
 
 ## Exercise: Handling Errors When Files Don't Exist
 
-30 minutes
+* Receives a file_name and line_number as command line parameters.
+* Prints the specified line_number from file_name to the screen. The user will specify this as you would expect, not using zero as the first line.
+* Make sure you check for following errors
+    * The file doesn’t ex
+    * desn’t contain the line_number specified (file is too short).
 
+```py
+import sys
+
+fileName = sys.argv[1]
+number = int(sys.argv[2])
+
+try:
+    f = open(fileName)
+except IOError:
+    print("There is no such file, please check the path or fileName")
+else:
+    with f:
+        lines = f.readlines()
+        try:
+            printLine = lines[number - 1]
+        except IndexError:
+            print("The given line number exeeds the file lines, try with something smaller")
+        else:
+            print(lines[number - 1])
+```
 ## Exercise: Interacting with External Commands
 
-30 minutes
+* `python -m http.server` to start python server
+* `lsof -n -i4TCP:PORT_NUMBER` to check process running on port number
+
+## TODO (Thursday 08/30 2 hrs)
+
+## Excercise and Quiz
 
 ## Exercise: Setting Exit Status on Error
 
