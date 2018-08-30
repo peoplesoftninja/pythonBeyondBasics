@@ -1206,10 +1206,6 @@ else:
 * `python -m http.server` to start python server
 * `lsof -n -i4TCP:PORT_NUMBER` to check process running on port number
 
-## TODO (Thursday 08/30 2 hrs)
-
-## Excercise and Quiz
-
 ## Exercise: Setting Exit Status on Error
 
 When error exist with a status `sys.exit(1)`
@@ -1253,6 +1249,8 @@ $ pip3.6 uninstall boto3
 * `conda env export > environment.yaml`
 * `conda env create -f environment.yaml` if env already exist open yaml change name to something else
 * `conda install xyz` similar to pip
+* `conda list` list all packages
+* `conda env list` list all environments
 
 * [Documentation](https://conda.io/docs/user-guide/tasks/manage-environments.html#creating-an-environment-with-commands)
 
@@ -1302,37 +1300,212 @@ print(printString)
 * `#!/home/$USER/venvs/experiment/python`You’ll need to substitute in your actual username for $USER
 
 
+## Creating a Large Scripting Project
+
+## Examining the Problem and Prep work
+
+### Project
+
+We have many database servers that we manage, and we want to create a single tool that we can use to easily back up the databases to either AWS S3 or locally. We would like to be able to:
+
+1. Specify the database URL to backup.
+2. Specify a “driver” (local or s3)
+3. Specify the backup “destination”. This will be a file path for local and a bucket name for s3.
+4. Depending on the “driver”, create a local backup of the database or upload the backup to an S3 bucket.
+
+* First step is to setup up a DB which we will backup. For this we are using a Postgres server on a centos
+* You can setup the server by using the following [script]. This uses docker(https://raw.githubusercontent.com/linuxacademy/content-python3-sysadmin/master/helpers/db_setup.sh)
+
+```shell
+$ curl -o db_setup.sh https://raw.githubusercontent.com/linuxacademy/content-python3-sysadmin/master/helpers/db_setup.sh
+$ chmod +x db_setup.sh
+$ ./db_setup.sh
+```
+
+* next setup is to install a postgres9.6 client to access the server
+```shell
+$ sudo yum install https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
+$ sudo yum update
+
+```
+
+* to connect `psql postgres://[USERNAME]:[PASSWORD]@[SERVER_IP]:80/sample -c "SELECT count(id) FROM employees;"`
+
+
+## Planning through Documentation
+
+To start out our project, we’re going to set up our 
+
+* source control
+*  our virtualenv
+*  start documenting how we want the project to work.
+
+* In the pgbackup folder create a srce folder and in that create a pgbackup which will contain all the main scripts.
+* Create another folder called tests which will contain all the tests scripts
+* Create a `__init__.py` and .keep as shown below
+
+```shell
+(pgbackup-E7nj_BsO) $ mkdir -p src/pgbackup tests
+(pgbackup-E7nj_BsO) $ touch src/pgbackup/__init__.py tests/.keep
+```
+
+* `mkdir -p ~/code/pgbackup`
+* `pipenv` this is a combination of venv and pip. To install use `pip3.6 install --user pipenv`
+* `$ pipenv --python $(which python3.6)` to create env this creates a `Pipfile`
+* to activate `pipenv shell` and to deactivate use `exit`
+* set up git as our source control management tool by initializing our repository. We’ll also add a .gitignore file from GitHub so that we don’t later track files that we don’t mean to.
+
+```shell
+$ git init
+$ curl https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore -o .gitignore
+```
+
+* use this .git [file](https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore) to get a custome made of files which shouldn't be uploaded to github
+
+* for documentation we use [reStructuredText](http://docutils.sourceforge.net/rst.html), which is similar to markdown. Python has tools that can read this text
+
+```rst
+pgbackup
+========
+
+CLI for backing up remote PostgreSQL databases locally or to AWS S3.
+
+Preparing for Development
+-------------------------
+
+1. Ensure ``pip`` and ``pipenv`` are installed
+2. Clone repository: ``git clone git@github.com:example/pgbackup``
+3. ``cd`` into repository
+4. Fetch development dependencies ``make install``
+5. Activate virtualenv: ``pipenv shell``
+
+Usage
+-----
+
+Pass in a full database URL, the storage driver, and destination.
+
+S3 Example w/ bucket name:
+
+::
+
+    $ pgbackup postgres://bob@example.com:5432/db_one --driver s3 backups
+
+Local Example w/ local path:
+
+::
+
+    $ pgbackup postgres://bob@example.com:5432/db_one --driver local /var/local/db_one/backups
+
+Running Tests
+-------------
+
+Run tests locally using ``make`` if virtualenv is active:
+
+::
+
+    $ make
+
+If virtualenv isn’t active then use:
+
+::
+
+    $ pipenv run make
+```
+
+```shell
+$ git add --all .
+$ git commit -m 'Initial commit'
+
+```
+
+## Initial Project Layout
+
+* `setup.py` this specifies what is going on in project and other metadata
+* [Documentation](https://setuptools.readthedocs.io/en/latest/setuptools.html#basic-use)
+* *Note: readthedocs.io can take your rst file and convert it to html*
+
+~/code/pgbackup/setup.py
+```py
+from setuptools import setup, find_packages
+
+with open('README.rst', encoding='UTF-8') as f:
+    readme = f.read()
+
+setup(
+    name='pgbackup',
+    version='0.1.0',
+    description='Database backups locally or to AWS S3.',
+    long_description=readme,
+    author='Keith',
+    author_email='keith@linuxacademy.com',
+    packages=find_packages('src'),
+    package_dir={'': 'src'}, # this needs to be there since all our code is in src
+    install_requires=[]
+)
+```
+
+* test this by
+
+```shell
+(pgbackup-E7nj_BsO) $ pip install -e .
+Obtaining file:///home/user/code/pgbackup
+Installing collected packages: pgbackup
+  Running setup.py develop for pgbackup
+Successfully installed pgbackup
+```
+
+* We can uninstall it by
+
+```shell
+(pgbackup-E7nj_BsO) $ pip uninstall pgbackup
+Uninstalling pgbackup-0.1.0:
+  /home/user/.local/share/virtualenvs/pgbackup-E7nj_BsO/lib/python3.6/site-packages/pgbackup.egg-link
+  Proceed (y/n)? y
+    Successfully uninstalled pgbackup-0.1.0
+```
+
+* `Makefile` are used to run some tasks. We execute this by just saying `make`
+  
+```py
+.PHONY: default install test # this will makesure that it doesn't create file names when running commands
+
+default: test # Make is going to run the first comand without a . here it will go to default and run test command
+
+install:
+    pipenv install --dev --skip-lock
+
+test:
+    PYTHONPATH=./src pytest
+
+```
+
+## Review
+
+* Before starting our code we created the following files
+    * Makefile
+    * setup.py
+    * src folder for the code
+    * tests folder for the tests
+    * pipenv for the pip and virtualenv which created the Pipfile
+    * git init for SCM
+
 # TODO
 
 3 sessions
 
-1 session ( 2 hrs) till CLI Guided by test
-1 session (1 hr 45 mins)
-1 session (7 exceises 1 hr 30 mins)
+* 1 session ( 2 hr) implementing mocking
+* 1 session (1 hr 45 mins) till implementing AWS interaction
+* 1 session (1 hr 30 mins) 7 exceises 
 
 ## Revision
 
 30
 
-## Creating a Large Scripting Project
-
-## Examining the Problem and Prep work
-
-10
-
-## Planning through Documentation
-
-15
-
-## Initial Project Layout
-
-15
-
 ## Implementing feaures with test driven development
 
 ## Intro to TDD and First test
 
-10
+30
 
 ## Implementing CLI Guided by Tests
 
