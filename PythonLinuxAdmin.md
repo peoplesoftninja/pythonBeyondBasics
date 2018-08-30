@@ -861,12 +861,9 @@ else:
             print(line.strip()[::-1])a
 ```
 
-
-## TODO ( 2 hr 30 mins)
-
 ## Exit Statuses
 
-[sys.exit documentation](https://docs.python.org/3/library/sys.html#sys.exit)
+* [sys.exit documentation](https://docs.python.org/3/library/sys.html#sys.exit)
 
 When our reverse-file script receives a file that doesn’t exist, we show an error message, but we don’t set the exit status to 1 to be indicative of an error
 
@@ -922,13 +919,13 @@ $ echo $?
 
 This won't work in windows
 
-[subprocess module](https://docs.python.org/3/library/subprocess.html)
-[subprocess.run](https://docs.python.org/3/library/subprocess.html#subprocess.run)
-[subprocess.completedProcess class](https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess)
-[subprocess.PIP](https://docs.python.org/3/library/subprocess.html#subprocess.PIPE)
-[bytes](https://docs.python.org/3/library/stdtypes.html#bytes)
-[subprocess.callprocesserror](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError)
-[pathlib](https://docs.python.org/3/library/pathlib.html)
+* [subprocess module](https://docs.python.org/3/library/subprocess.html)
+* [subprocess.run](https://docs.python.org/3/library/subprocess.html#subprocess.run)
+* [subprocess.completedProcess class](https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess)
+* [subprocess.PIP](https://docs.python.org/3/library/subprocess.html#subprocess.PIPE)
+* [bytes](https://docs.python.org/3/library/stdtypes.html#bytes)
+* [subprocess.callprocesserror](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError)
+* [pathlib](https://docs.python.org/3/library/pathlib.html)
 
 ```py
 >>> import subprocess
@@ -1002,7 +999,7 @@ subprocess.CalledProcessError: Command '['cat', 'fake.txt']' returned non-zero e
 
 ## Advanced Iteration with list Comprehension
 
-[List Comprehension Documentation](vhttps://docs.python.org/3/tutorial/datastructures.html#list-comprehensions)
+* [List Comprehension Documentation](vhttps://docs.python.org/3/tutorial/datastructures.html#list-comprehensions)
 
 We’re going to write a script that takes a word that then returns all of the values in the “words” file on our machine (install words using `sudo yum install -y words`) that contain the word. Our first step will be writing the script using standard iteration, and then we’re going to refactor our script to utilize a list comprehension.
 
@@ -1049,9 +1046,9 @@ Generating Random test data
 
 ## random&json
 
-[random module](https://docs.python.org/3/library/random.html)
-[json module](https://docs.python.org/3/library/json.html)
-[range type](https://docs.python.org/3/library/stdtypes.html#range)
+* [random module](https://docs.python.org/3/library/random.html)
+* [json module](https://docs.python.org/3/library/json.html)
+* [range type](https://docs.python.org/3/library/stdtypes.html#range)
 
 ```py
 import random
@@ -1074,8 +1071,9 @@ for identifier in range(count):
 
 ## shutil&glob
 
-[shutil module](https://docs.python.org/3/library/shutil.html)
-[glob module](https://docs.python.org/3/library/glob.html)
+* [shutil module](https://docs.python.org/3/library/shutil.html)
+
+* [glob module](https://docs.python.org/3/library/glob.html)
 
 Some of the most used utilities in Linux are `mv`, `mkdir`, `cp`, `ls`, and `rm`. Thankfully, we don’t need to utilize subprocess to access the same functionality of these utilities because the standard library has us covered
 
@@ -1214,26 +1212,155 @@ else:
 
 ## Exercise: Setting Exit Status on Error
 
-10 minutes
-
-## Quiz
-
-15 minutes
+When error exist with a status `sys.exit(1)`
 
 ## Third Party Packages
 
 ## pip
 
-5 minutes
+* `pip install xyz` for installing
+* `pip list` and `pip freeze` are similar
+* `pip freeze > requirements.txt` then the txt file can be shared with anyone to create the same environment before running the python module
+* `pip uninstall -y -r requirments.txt` will uninstall and `pip install -r requirments.txt` will install
+* We need to use sudo to install packages globally, but sometimes we only want to install a package for ourselves, and we can do that by using the  `--user` flag to the install command. Let’s reinstall `boto3` so that it’s local to our user by using our `requirements.txt` file:
 
+```shell
+$ pip3.6 install --user -r requirements.txt
+$ pip3.6 list --user
+$ pip3.6 uninstall boto3
+
+```
 ## virtualenv
 
-15 minutes
+* virtualenv are sandbox version of python environment
+* We can only have one version of a package installed at a given time, and this can sometimes be a headache if we have multiple projects that require different versions of the same dependency. This is where `virtualenv` comes into play and allows us to create sandboxed Python environments.
+
+* Creating Virutal Environment
+
+`python -m venv <path/name>` go to the venv `location/Scripts` and `activate` and use `deactivate` to get out
+
+* `-m` is used to create a module of the folder name
+
+## Anaconda
+
+* similar to virtualenv
+
+* Commands
+* `conda create --name test_env flask sqlalchemy` This will create a venv with flask and sqlalchemy installed
+* `conda activate test_env` all commands from here are in acaconda command prompt not cmd
+* `deactivate`
+* `conda remove --name test_env --all` to delete the venv
+* `conda env export > environment.yaml`
+* `conda env create -f environment.yaml` if env already exist open yaml change name to something else
+* `conda install xyz` similar to pip
+
+* [Documentation](https://conda.io/docs/user-guide/tasks/manage-environments.html#creating-an-environment-with-commands)
 
 ## third party packages
 
-15 minutes
+* We’re going to write up the start of a script that can provide us with weather information using data from openweathermap.org. For this video, we’re going to be installing another package called [requests](http://docs.python-requests.org/en/master/). This is a nice package for making web requests from Python and one of the most used Python packages. You will need to get your API key from [OpenWeatherMap](https://openweathermap.org/api) to follow along
+
+* open anaconda prompt
+* `conda create --name experiment`
+* `conda activate experiment`
+* `conda install requests`
+* setx OWN_API_KEY "KEY FROM WEBSITE"
+```py
+import requests
+import os
+import sys
+from argparse import ArgumentParser
+
+parser = ArgumentParser(description="Get the current weather information")
+parser.add_argument('zip', help="zip/postal code whose weather you want to check")
+parser.add_argument('--country', default='us', help='country zip/postal belongs to default is us')
+
+args = parser.parse_args()
+
+api_key = os.getenv('OWM_API_KEY') # befor this you need to save the environment variable
+
+if not api_key:
+    print("no api_key provided")
+    sys.exit(1)
+
+url = f"http://api.openweathermap.org/data/2.5/weather?zip={args.zip},{args.country}&appid={api_key}"
+res = requests.get(url)
 
 
+if res.status_code != 200:
+    print("Incorrect url")
+    sys.exit(1)
 
+weatherData = res.json()['weather']
+
+printString = f"The weather is {weatherData[0]['main']} with {weatherData[0]['description']}"
+print(printString)
+```
+
+* from anaconda prompt `weahter.py 89119` will get you the description of weather
+* one problem with this is we need to start the env every time we neeed to run it, this can be worked around by adding the actual conda environment in the start of python file, only in linux.
+* `#!/home/$USER/venvs/experiment/python`You’ll need to substitute in your actual username for $USER
+
+
+# TODO
+
+3 sessions
+
+1 session ( 2 hrs) till CLI Guided by test
+1 session (1 hr 45 mins)
+1 session (7 exceises 1 hr 30 mins)
+
+## Revision
+
+30
+
+## Creating a Large Scripting Project
+
+## Examining the Problem and Prep work
+
+10
+
+## Planning through Documentation
+
+15
+
+## Initial Project Layout
+
+15
+
+## Implementing feaures with test driven development
+
+## Intro to TDD and First test
+
+10
+
+## Implementing CLI Guided by Tests
+
+45
+
+## Introduction to mocking in test
+
+20
+
+## Implementing postgresql interaction
+
+20
+
+## implementing local file storage
+
+15
+
+## implementing AWS interaction
+
+30
+
+## Integration features and distributing project
+
+## wiring the unit test together
+
+30
+
+## Building and sharing a wheel distribution
+
+15
 
