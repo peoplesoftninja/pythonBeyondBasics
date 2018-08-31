@@ -9,7 +9,11 @@ Welcome to PythonBeyondBasics's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-
+   BeyondFunctions
+   OrganizingLayerPrograms
+   prerequisites
+   PythonLinuxAdmin
+   README
 
 
 Indices and tables
