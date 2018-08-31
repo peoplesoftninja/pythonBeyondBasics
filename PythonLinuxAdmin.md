@@ -1637,7 +1637,7 @@ E           AttributeError: 'NoneType' object has no attribute 'parse_args'
 ```
 * This is because when we run the `create_parser()` it dind't return anything, so let us work on that
 
-*Note: Use the following command in vim to run the test with a short cut( in this case `,t`) and press enter to get back to vim. `map ,t :!make<cr>`*
+*Note: Use the following command in vim to run the test with a short cut( in this case `,t`) and press enter to get back to vim. `map ,t :!make<cr>` ! means to enter the command outside vm, make is the actual command and cr stands for carriage return which is to say press enter after make*
 
 ```py
 from argparse import ArgumentParser
