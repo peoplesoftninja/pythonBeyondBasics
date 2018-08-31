@@ -559,6 +559,7 @@ yum is a package management tools it is used to install softwares easily
 * lsof = list open files to see which file is open by which process
 * vim-enhanced = better version of vim
 * words = words is a standard file on all Unix and Unix-like operating systems, and is simply a newline-delimited list of dictionary words. It is used, for instance, by spell-checking programs.
+* `:e file.log` to move to another file from the opened vim file and `:bn` buffer next to move back to original
 
 ```shell
 $ git config --global user.name "Your Name"
@@ -1420,7 +1421,7 @@ $ git commit -m 'Initial commit'
 
 ## Initial Project Layout
 
-* `setup.py` this specifies what is going on in project and other metadata
+* `setup.py` this is used to build and distribute packages. Basically by running this all dependencies will be installed, so any one can just download our project and it will install everything they can start using our code staight away
 * [Documentation](https://setuptools.readthedocs.io/en/latest/setuptools.html#basic-use)
 * *Note: readthedocs.io can take your rst file and convert it to html*
 
@@ -1439,7 +1440,7 @@ setup(
     author='Keith',
     author_email='keith@linuxacademy.com',
     packages=find_packages('src'),
-    package_dir={'': 'src'}, # this needs to be there since all our code is in src
+    package_dir={'': 'src'}, # this needs to be there since all our code is in src instead of right under the directory.
     install_requires=[]
 )
 ```
@@ -1467,7 +1468,7 @@ Uninstalling pgbackup-0.1.0:
 * `Makefile` are used to run some tasks. We execute this by just saying `make`
   
 ```py
-.PHONY: default install test # this will makesure that it doesn't create file names when running commands
+.PHONY: default install test # this will make sure that it doesn't create file names when running commands
 
 default: test # Make is going to run the first comand without a . here it will go to default and run test command
 
@@ -1482,35 +1483,204 @@ test:
 ## Review
 
 * Before starting our code we created the following files
-    * Makefile
-    * setup.py
-    * src folder for the code
-    * tests folder for the tests
+    * ~/code/pgbackup/Makefile
+    * ~/code/pgbackup/setup.py
+    * ~/code/pgbackup/src/pgbackup/__init__.py folder for the code
+    * ~/code/pgbackup/tests folder for the tests
     * pipenv for the pip and virtualenv which created the Pipfile
     * git init for SCM
 
-# TODO
-
-3 sessions
-
-* 1 session ( 2 hr) implementing mocking
-* 1 session (1 hr 45 mins) till implementing AWS interaction
-* 1 session (1 hr 30 mins) 7 exceises 
-
-## Revision
-
-30
 
 ## Implementing feaures with test driven development
 
 ## Intro to TDD and First test
 
-30
+* instead of `unittest` we will use `pytest` 
+* The docs for  [pytest](https://docs.pytest.org/en/latest/)
+* To install, first go to the virtualenv `pipenv shell` then install the pytest package `pipenv install --dev pytest`
+* the test file and the functions will start from `test_` name and the test files will be under the tests directory. this is how pytest recognizes what they are. Using pytest, our tests will be functions with names that start with test_. As long as we name the functions properly, the test runner should find and run them
+* The first step of TDD is writing a failing test. In our case, we’re going to go ahead and write a few failing tests. Then we will write the source code step by step, till the test runs to success. 
+* This is also knows as `RED > Green > Refactor` which means you first write a failure, then write your code till it is green then refactor it to make it better
+* At this point, we don’t even have any source code files, but that doesn’t mean that we can’t write code that demonstrates how we would like our modules to work. The module that we want is called `cli`, and it should have a create_parser function that returns an ArgumentParser configured for our desired use.
+* Let’s write some tests that exercise `cli.create_parser` and ensure that our ArgumentParser works as expected.
+* The name of our test file is important; make sure that the file starts with `test_.` This file will be called `test_cli.py.`
+* ~/code/pgbackup/tests/test_cli.py
+```py
+import pytest
+
+from pgbackup import cli
+
+url = "postgres://bob:password@example.com:5432/db_one"
+
+def test_parser_without_driver():
+    """
+    Without a specified driver(--driver missing from url) the parser will exit
+    """
+    with pytest.raises(SystemExit): # basically saying if the url is just url and no --driver it should give error
+        parser = cli.create_parser()
+        parser.parse_args([url])
+
+def test_parser_with_driver():
+    """
+    The parser will exit if it receives a driver
+    without a destination
+    """
+    parser = cli.create_parser()
+    with pytest.raises(SystemExit):
+        parser.parse_args([url, "--driver", "local"])
+
+def test_parser_with_driver_and_destination():#Happy test
+    """
+    The parser will not exit if it receives a driver
+    with a destination
+    """
+    parser = cli.create_parser()
+
+    args = parser.parse_args([url, "--driver", "local", "/some/path"])
+
+    assert args.driver == "local"
+    assert args.destination == "/some/path"
+```
+
+When we run the above with `make` it will give following
+
+```
+$ pipenv shell
+(pgbackup-E7nj_BsO) $ make
+PYTHONPATH=./src pytest
+======================================= test session starts =======================================
+platform linux -- Python 3.6.4, pytest-3.3.2, py-1.5.2, pluggy-0.6.0
+rootdir: /home/user/code/pgbackup, inifile:
+collected 0 items / 1 errors
+
+============================================= ERRORS ==============================================
+_______________________________ ERROR collecting tests/test_cli.py ________________________________
+ImportError while importing test module '/home/user/code/pgbackup/tests/test_cli.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+tests/test_cli.py:3: in 
+    from pgbackup import cli
+    E   ImportError: cannot import name 'cli'
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 1 errors during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ===================================== 1 error in 0.11 seconds =====================================
+    make: *** [test] Error 2
+```
+
+Based on the above we know that the next step is to `import cli` that is create a `cli.py`
+
+* Now if we create just that file we get change in our error, `touch src/pgbackup/cli.py`
+
+```
+(pgbackup-E7nj_BsO) pgbackup[master !?] $ make
+PYTHONPATH=./src pytest
+==================================================================== test session starts ====================================================================
+platform linux -- Python 3.6.4, pytest-3.7.4, py-1.6.0, pluggy-0.7.1
+rootdir: /home/user/code/pgbackup, inifile:
+collected 3 items
+
+tests/test_cli.py FFF                                                                                                                                 [100%]
+
+========================================================================= FAILURES ==========================================================================
+________________________________________________________________ test_parser_without_driver _________________________________________________________________
+
+    def test_parser_without_driver():
+        """
+        Without a specified drive (--driver in url) parser will exit
+        """
+        with pytest.raises(SystemExit):
+>           parser = cli.create_parser()
+E           AttributeError: module 'pgbackup.cli' has no attribute 'create_parser'
+
+tests/test_cli.py:11: AttributeError
+__________________________________________________________________ test_parser_with_driver __________________________________________________________________
+
+    def test_parser_with_driver():
+        """
+        The parser will exit if driver given but without destination
+        """
+>       parser = cli.create_parser()
+E       AttributeError: module 'pgbackup.cli' has no attribute 'create_parser'
+
+tests/test_cli.py:18: AttributeError
+__________________________________________________________ test_parser_with_driver_and_destination __________________________________________________________
+
+    def test_parser_with_driver_and_destination():
+        """
+        The parser will not exit if it recives both driver and destination
+        """
+>       parser = cli.create_parser()
+E       AttributeError: module 'pgbackup.cli' has no attribute 'create_parser'
+
+tests/test_cli.py:26: AttributeError
+================================================================= 3 failed in 0.05 seconds ==================================================================
+make: *** [test] Error 1
+```
 
 ## Implementing CLI Guided by Tests
 
-45
+* ~/code/pgbackup/src/pgbackup/cli.py
+* Since the above test says the module doesn't have attribute `create_parser` let us do that
 
+```py
+def create_parser():
+    pass
+```
+
+* after the above code if we run make we get following error
+
+```
+parser = cli.create_parser()
+        with pytest.raises(SystemExit):
+>           parser.parse_args([url,"--driver","local"])
+E           AttributeError: 'NoneType' object has no attribute 'parse_args'
+
+```
+* This is because when we run the `create_parser()` it dind't return anything, so let us work on that
+
+*Note: Use the following command in vim to run the test with a short cut( in this case `,t`) and press enter to get back to vim. `map ,t :!make<cr>`*
+
+```py
+from argparse import ArgumentParser
+
+def create_parser():
+    parser = ArgumentParser()
+    return parser
+```
+
+* when we run the above test we get the following
+
+```
+(pgbackup-E7nj_BsO) $ make
+...
+self = ArgumentParser(prog='pytest', usage=None, description=None, formatter_class=, conflict_handler='error', add_help=True)
+status = 2
+message = 'pytest: error: unrecognized arguments: postgres://bob:password@example.com:5432/db_one --driver local /some/path\n'
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+/usr/local/lib/python3.6/argparse.py:2376: SystemExit
+-------------------------------------- Captured stderr call ---------------------------------------
+usage: pytest [-h]
+pytest: error: unrecognized arguments: postgres://bob:password@example.com:5432/db_one --driver local /some/path
+=============================== 1 failed, 2 passed in 0.14 seconds ================================
+```
+
+* Interestingly, two of the tests succeeded. Those two tests were the ones that expected there to be a SystemExit error. Our tests sent unexpected output to the parser (since it wasn’t configured to accept arguments), and that caused the parser to error. This demonstrates why it’s important to write tests that cover a wide variety of use cases. If we hadn’t implemented the third test to ensure that we get the expected output on success, then our test suite would be green!
+
+* [argparse.action -- see how to add customized action class](https://docs.python.org/3/library/argparse.html#action)
+
+* TODO: Start from 9 mins, how to write customized action of argparse
+# TODO
+
+3 sessions
+
+* 1 session ( 1 hr 30) implementing postgresql interaction
+* 1 session (1 hr 30 mins) till implementing AWS interaction
+* 1 session (1 hr 30 mins) 7 exerceises 
 ## Introduction to mocking in test
 
 20
