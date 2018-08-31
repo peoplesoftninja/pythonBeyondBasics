@@ -7,13 +7,10 @@ Welcome to PythonBeyondBasics documentation!
 ==============================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   BeyondFunctions.md
-   OrganizingLayerPrograms.md
-   prerequisites.md
+
    PythonLinuxAdmin.md
-   README.md
 
 
 
