@@ -569,6 +569,7 @@ $ curl https://raw.githubusercontent.com/linuxacademy/content-python3-sysadmin/m
 ```
 
 * the vimrc is used to edit the vim editor settings. In AIX this will be called ~/.exrc as it uses VI
+* to change the color scheme in the vimrc file write colorschme koehler (to see other colors in vim do :colo <tab>)
   
 Installing Python and other dependencies
 ```shell
@@ -1669,41 +1670,206 @@ pytest: error: unrecognized arguments: postgres://bob:password@example.com:5432/
 =============================== 1 failed, 2 passed in 0.14 seconds ================================
 ```
 
-* Interestingly, two of the tests succeeded. Those two tests were the ones that expected there to be a SystemExit error. Our tests sent unexpected output to the parser (since it wasn’t configured to accept arguments), and that caused the parser to error. This demonstrates why it’s important to write tests that cover a wide variety of use cases. If we hadn’t implemented the third test to ensure that we get the expected output on success, then our test suite would be green!
+* Interestingly, two of the tests succeeded. Those two tests were the ones that expected there to be a `SystemExit` error. Our tests sent unexpected output to the parser (since it wasn’t configured to accept arguments), and that caused the parser to error. This demonstrates why it’s important to write tests that cover a wide variety of use cases. If we hadn’t implemented the third test to ensure that we get the expected output on success, then our test suite would be green!
 
 * [argparse.action -- see how to add customized action class](https://docs.python.org/3/library/argparse.html#action)
 
-* TODO: Start from 9 mins, how to write customized action of argparse
-# TODO
 
-3 sessions
+* Our idea of having a flag of `--driver` that takes two distinct values isn’t something that any existing `argparse.Action` can do. Because of this, we’re going to follow along with the documentation and implement our own custom `DriverAction` class. We can put our custom class in our `cli.py` file and use it in our add_argument 
+call.
 
-* 1 session ( 1 hr 30) implementing postgresql interaction
-* 1 session (1 hr 30 mins) till implementing AWS interaction
-* 1 session (1 hr 30 mins) 7 exerceises 
+src/pgbackup/cli.py
+```py
+from argparse import Action, ArgumentParser
+
+class DriverAction(Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        driver, destination = values
+        namespace.driver = driver.lower()
+        namespace.destination = destination
+
+def create_parser():
+    parser = ArgumentParser(description="""
+    Back up PostgreSQL databases locally or to AWS S3.
+    """)
+    parser.add_argument("url", help="URL of database to backup")
+    parser.add_argument("--driver",
+            help="how & where to store backup",
+            nargs=2,
+            action=DriverAction,
+            required=True)
+    return parser
+```
+* When we run the above we see that it runs without failure
+* We are going to add 2 more tests
+    * Ensure you can't use a driver that is unkown like azure
+    * Ensure that driver for s3 and local don't cause error, Happy test
+
+test/test_cli.py (partial)
+```py
+def test_parser_with_unknown_drivers():
+    """
+    The parser will exit if the driver name is unknown.
+    """
+
+    parser = cli.create_parser()
+
+    with pytest.raises(SystemExit):
+        parser.parse_args([url, "--driver", "azure", "destination"])
+
+def test_parser_with_known_drivers():
+    """
+    The parser will not exit if the driver name is known.
+    """
+
+    parser = cli.create_parser()
+
+    for driver in ['local', 's3']:
+        assert parser.parse_args([url, "--driver", driver, "destination"])
+```
+* Since we already have a custom DriverAction, we can feel free to customize this to make our CLI a little more intelligent. The only drivers that we are going to support (for now) are s3 and local, so let’s add some logic to our action to ensure that the driver given is one that we can work with:
+
+src/pgbackup/cli.py(partial) 
+```py
+known_drivers = ['local', 's3']
+
+class DriverAction(Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        driver, destination = values
+        if driver.lower() not in known_drivers:
+            parser.error("Unknown driver. Available drivers are 'local' & 's3'")
+        namespace.driver = driver.lower()
+        namespace.destination = destination
+```
+
+* Before we consider this unit of our application complete, we should consider cleaning up some of the duplication in our tests. We create the parser using `create_parser` in every test but using [pytest.fixture](https://docs.pytest.org/en/latest/fixture.html) we can extract that into a separate function and inject the parser value into each test that needs it. 
+
+tests/test_cli.py (partial)
+```py
+import pytest
+
+@pytest.fixture
+def parser():
+    return cli.create_parser()
+```
+* the `@pytest.fixture` on top of our function definition is what’s known as a **decorator**. A “decorator” is a function that returns a modified version of the function. We’ve seen that if we don’t use parentheses that our functions aren’t called, and because of that we’re able to pass functions into other functions as arguments. This particular decorator will register our function in the list of fixtures that can be injected into a pytest test. To inject our fixture, we will add an argument to our test function definition that has the same name as our fixture name, in this case, `parser`
+
+* Here’s what our test file will look like:
+
+tests/test_cli.py
+```py
+import pytest
+
+from pgbackup import cli
+
+url = "postgres://bob@example.com:5432/db_one"
+
+@pytest.fixture()
+def parser():
+    return cli.create_parser()
+
+def test_parser_without_driver(parser):
+    """
+    Without a specified driver the parser will exit
+    """
+    with pytest.raises(SystemExit):
+        parser.parse_args([url])
+
+def test_parser_with_driver(parser):
+    """
+    The parser will exit if it receives a driver
+    without a destination
+    """
+    with pytest.raises(SystemExit):
+        parser.parse_args([url, "--driver", "local"])
+
+def test_parser_with_driver_and_destination(parser):
+    """
+    The parser will not exit if it receives a driver
+    with a destination
+    """
+    args = parser.parse_args([url, "--driver", "local", "/some/path"])
+
+    assert args.driver == "local"
+    assert args.destination == "/some/path"
+
+def test_parser_with_unknown_drivers(parser):
+    """
+    The parser will exit if the driver name is unknown.
+    """
+    with pytest.raises(SystemExit):
+        parser.parse_args([url, "--driver", "azure", "destination"])
+
+def test_parser_with_known_drivers(parser):
+    """
+    The parser will not exit if the driver name is known.
+    """
+    for driver in ['local', 's3']:
+        assert parser.parse_args([url, "--driver", driver, "destination"])
+```
+
 ## Introduction to mocking in test
 
-20
+* Mocking is substituting functionality when we don't have the actual technology to user
+* The simplest way that we can get all of the information that we need out of a PostgreSQL is to use the pg_dump utility that Postgres itself provides. Since that code exists outside of our codebase, it’s not our job to ensure that the pg_dump tool itself works, but we do need to write tests that can run without an actual Postgres server running. For this, we will need to “stub” our interaction with pg_dump
+* For this we use [pytest-mock](https://github.com/pytest-dev/pytest-mock/#usage) package
+* `pipenv shell`
+* `pipenv install --dev pytest-mock`
+* We’re going to put all of the Postgres related logic into its own module called `pgdump`, and we’re going to begin by writing our tests. We want this module to do the following:
+    * Make a call out to pg_dump using [subprocess.Popen](https://docs.python.org/3/library/subprocess.html#subprocess.Popen).
+    * Returns the subprocess that STDOUT can be read from.
+* To ensure that our code runs the proper third-party utilities, we’re going to use [mocker.patch](http://www.voidspace.org.uk/python/mock/patch.html#mock.patch) on the `subprocess.Popen` constructor. This will substitute in a different implementation that holds onto information like the number of times the function is called and with what arguments.
 
+tests/test_pgdump.py
+```py
+import pytest
+import subprocess
+
+from pgbackup import pgdump
+
+url = "postgres://bob:password@example.com:5432/db_one"
+
+def test_dump_calls_pg_dump(mocker):
+    """
+    Utilize pg_dump with the database URL
+    """
+    mocker.patch('subprocess.Popen') # FROM HERE THIS COMMAND BEHAVES DIFFERENTLY
+    assert pgdump.dump(url)
+    subprocess.Popen.assert_called_with(['pg_dump', url], stdout=subprocess.PIPE)
+```
+* The arguments that we’re passing to `assert_called_with` will need to match what is being passed to `subprocess.Popen` when we exercise `pgdump.dump(url).`
+
+# TODO
+
+4 sessions
+
+* 1 session ( 1 hr 30) implementing postgresql interaction
+* 1 session (1 hr 45 mins) till implementing AWS interaction
+* 1 session (1 hr 45 mins) building and sharing
+* 1 session (1 hr 45 mins) revision and excercise 
+
+## Revision
+
+45 mins
 ## Implementing postgresql interaction
 
-20
+45 mins
 
 ## implementing local file storage
 
-15
+45
 
 ## implementing AWS interaction
 
-30
+1 hr
 
 ## Integration features and distributing project
 
 ## wiring the unit test together
 
-30
+1 hr
 
 ## Building and sharing a wheel distribution
 
-15
+45 
 
