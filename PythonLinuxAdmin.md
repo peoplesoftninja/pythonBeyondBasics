@@ -2026,12 +2026,14 @@ def s3(client, infile, bucket, name):
 
 # TODO
 
-4 sessions
+2 sessions
 
-* 1 session ( 1 hr 30) implementing postgresql interaction
-* 1 session (1 hr 45 mins) till implementing AWS interaction
-* 1 session (1 hr 45 mins) building and sharing
+* 1 session (2hr 15 mins) building and sharing
 * 1 session (1 hr 45 mins) revision and excercise 
+
+# Revision 
+
+30 mins
 
 ## Integration features and distributing project
 
