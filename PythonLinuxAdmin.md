@@ -1486,6 +1486,8 @@ test:
 * Before starting our code we created the following files
     * ~/code/pgbackup/Makefile
     * ~/code/pgbackup/setup.py
+    * ~/code/pgbackup/README.rst
+    * ~/code/pgbackup/Pipfile
     * ~/code/pgbackup/src/pgbackup/__init__.py folder for the code
     * ~/code/pgbackup/tests folder for the tests
     * pipenv for the pip and virtualenv which created the Pipfile
@@ -1839,6 +1841,189 @@ def test_dump_calls_pg_dump(mocker):
 ```
 * The arguments that we’re passing to `assert_called_with` will need to match what is being passed to `subprocess.Popen` when we exercise `pgdump.dump(url).`
 
+
+## Implementing postgresql interaction
+
+* the above fails complaining there is no pgdump file, so we create `src/pgbackup/pgdump.py` and when we run make agian it gives attribute error because there is no `dump` function
+
+src/pgbackup/pgdump.py
+```py
+import subprocess
+
+def dump(url):
+      return subprocess.Popen(['pg_dump', url], stdout=subprocess.PIPE)
+```
+
+
+* Let’s add another test that tells our `subprocess.Popen` to raise an `OSError` instead of succeeding.
+* This is the kind of error that we will receive if the end-user of our package doesn’t have the `pg_dump` utility installed. 
+* To cause our stub to raise this error we need to set the [side_effect](http://www.voidspace.org.uk/python/mock/mock.html#mock.Mock.side_effect) attribute when we call [mocker.patch](http://www.voidspace.org.uk/python/mock/patch.html#mock.patch). We’ll pass in an `OSError` to this attribute.
+* Finally, we’ll want to exit with a status code of 1 if we catch this error and pass the error message through. That means we’ll need to use `pytest.raises` again to ensure we receive a `SystemExit` error. Here’s what the final tests look like for our pgdump module
+
+tests/test_pgdump.py
+```py
+import pytest
+import subprocess
+
+from pgbackup import pgdump
+
+url = "postgres://bob:password@example.com:5432/db_one"
+
+def test_dump_calls_pg_dump(mocker):
+    """
+    Utilize pg_dump with the database URL
+    """
+    mocker.patch('subprocess.Popen')
+    assert pgdump.dump(url)
+    subprocess.Popen.assert_called_with(['pg_dump', url], stdout=subprocess.PIPE)
+
+def test_dump_handles_oserror(mocker):
+    """
+    pgdump.dump returns a reasonable error if pg_dump isn't installed.
+    """
+    mocker.patch('subprocess.Popen', side_effect=OSError("no such file"))
+    with pytest.raises(SystemExit):
+        pgdump.dump(url)
+```
+* Since we know that subprocess.Popen can raise an OSError, we’re going to wrap that call in a try block, print the error message, and use sys.exit to set the error code:
+
+src/pgbackup/pgdump.py
+```py
+import sys
+import subprocess
+
+def dump(url):
+    try:# basically handle the OSError that will be raised if pg_dump is not installed
+        return subprocess.Popen(['pg_dump', url], stdout=subprocess.PIPE)
+    except OSError as err:
+        print(f"Error: {err}")# printing error as is, just without stack trace
+        sys.exit(1)
+```
+* Doing Manual testing to make sure pgdump is working
+
+```py
+(pgbackup-E7nj_BsO) $ PYTHONPATH=./src python
+>>> from pgbackup import pgdump
+>>> dump = pgdump.dump('postgres://demo:password@54.245.63.9:80/sample')
+>>> f = open('dump.sql', 'w+b')
+>>> f.write(dump.stdout.read())
+>>> f.close()
+```
+* *Note: We needed to open our dump.sql file using the w+b flag because we know that the .stdout value from a subprocess will be a bytes object and not a str*
+* If we exit and take a look at the contents of the file using cat, we should see the SQL output. With the pgdump module implemented, it’s now a great time to commit our code
+
+
+
+## implementing local file storage
+
+* Let’s use TDD to implement the local storage strategy of our storage module.
+* We want our module to do two things
+    * take one readable and one writable object
+    * read the contents from readable object and then write it to writable object
+* *Notice that we didn’t say files, that’s because we don’t need our inputs to be file objects(as in above REPL we are using stdout output). They need to implement some of the same methods that a file does, like read and write, but they don’t have to be file objects.*
+* For our testing purposes, we can use the [tempfile](https://docs.python.org/3/library/tempfile.html) package to create a [TemporaryFile](https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryFile) to act as our “readable” and another [NamedTemporaryFile](https://docs.python.org/3/library/tempfile.html#tempfile.NamedTemporaryFile) to act as our “writeable”. We’ll pass them both into our function, and assert after the fact that the contents of the “writeable” object match what was in the “readable” object
+
+tests/test_storage.py
+```py
+import tempfile
+
+from pgbackup import storage
+
+def test_storing_file_locally():
+    """
+    Writes content from one file-like to another
+    """
+    infile = tempfile.TemporaryFile('r+b')
+    infile.write(b"Testing")
+    infile.seek(0)
+
+    outfile = tempfile.NamedTemporaryFile(delete=False)
+    storage.local(infile, outfile)
+    with open(outfile.name, 'rb') as f:
+        assert f.read() == b"Testing"
+```
+* implementing local storage
+
+src/pgbackup/storage.py
+```py
+def local(infile, outfile):
+    outfile.write(infile.read())
+    outfile.close()
+    infile.close()
+```
+
+
+## implementing AWS interaction
+
+* installing `boto3`
+* Install this in the virutal environment `pipenv install boto3`
+* After this we exit out of the virtual environment and configure our AWS Client
+```py
+(pgbackup-E7nj_BsO) $ exit
+$ mkdir ~/.aws
+$ pip3.6 install --user awscli
+$ aws configure #Here we give the key, secret key and region. For this you need to log in aws console and crate IAM account with programmatic access enabled
+$ exec $SHELL #to make sure it loads the configure
+```
+* We will write the tests for s3 function
+* To limit the explicit dependencies that we have, we’re going to have the following parameters to our storage.s3 function:
+    * A client object that has an `upload_fileobj` method.
+    * A boto3 client meets this requirement, but in testing, we can pass in a “mock” object that implements this method.
+    * A file-like object (responds to read).
+    * An S3 bucket name as a string.
+    * The name of the file to create in S3.
+
+tests/test_storage.py (partial)
+```py
+import tempfile
+import pytest
+
+from pgbackup import storage
+
+@pytest.fixture
+def infile():
+    infile = tempfile.TemporaryFile('r+b')
+    infile.write(b"Testing")
+    infile.seek(0)
+    return infile
+
+# Local storage tests...
+
+def test_storing_file_on_s3(mocker, infile):
+    """
+    Writes content from one readable to S3
+    """
+    #Mock() is part of unittest, but since pytest is a wrapper, we have to user mocker.Mock(). mocker is in pytest
+    client = mocker.Mock() #This is called object injection as we are not defining what client is, it can be anything like client = boto3.client('s3') or client = azure
+
+    storage.s3(client,
+            infile,
+            "bucket",
+            "file-name")# actual doing
+
+    client.upload_fileobj.assert_called_with(
+            infile,
+            "bucket",
+            "file-name")# testing the above command
+```
+
+src/pgbackup/storage.py (partial)
+```py
+def s3(client, infile, bucket, name):
+    client.upload_fileobj(infile, bucket, name)
+```
+
+* manually testing, this should create the file example.txt in the s3 bucket we created
+```py
+(pgbackup-E7nj_BsO) $ echo "UPLOADED" > example.txt
+(pgbackup-E7nj_BsO) $ PYTHONPATH=./src python
+>>> import boto3
+>>> from pgbackup import storage
+>>> client = boto3.client('s3')
+>>> infile = open('example.txt', 'rb')
+>>> storage.s3(client, infile, 'pyscripting-db-backups', infile.name)
+```
+
 # TODO
 
 4 sessions
@@ -1847,21 +2032,6 @@ def test_dump_calls_pg_dump(mocker):
 * 1 session (1 hr 45 mins) till implementing AWS interaction
 * 1 session (1 hr 45 mins) building and sharing
 * 1 session (1 hr 45 mins) revision and excercise 
-
-## Revision
-
-45 mins
-## Implementing postgresql interaction
-
-45 mins
-
-## implementing local file storage
-
-45
-
-## implementing AWS interaction
-
-1 hr
 
 ## Integration features and distributing project
 
