@@ -2202,5 +2202,5 @@ $ pgbackup --help
 
 2 sessions
 
-* 1 session (2hr 15 mins) building and sharing
-* 1 session (1 hr 45 mins) revision and excercise 
+* 1 session (1 hr 30 mins) Excercise
+* 1 session (1 hr 30 mins) Excercise
