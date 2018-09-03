@@ -1168,13 +1168,6 @@ for path in glob.iglob('./new/receipt-[0-9]*.json'):
 print(f"Receipt subtotal: ${round(subtotal, 2)}")
 ```
 
-# Lessons Learned
-
-* study max limit 2 hrs
-* estimation error 30 minutes
-
-
-
 ## Exercise: Handling Errors When Files Don't Exist
 
 * Receives a file_name and line_number as command line parameters.
@@ -1488,7 +1481,8 @@ test:
     * ~/code/pgbackup/setup.py
     * ~/code/pgbackup/README.rst
     * ~/code/pgbackup/Pipfile
-    * ~/code/pgbackup/src/pgbackup/__init__.py folder for the code
+    * ~/code/pgbackup/src/pgbackup/\__init__.py folder for the code
+    * ~/code/pgbackup/tests/.keep
     * ~/code/pgbackup/tests folder for the tests
     * pipenv for the pip and virtualenv which created the Pipfile
     * git init for SCM
@@ -2024,24 +2018,189 @@ def s3(client, infile, bucket, name):
 >>> storage.s3(client, infile, 'pyscripting-db-backups', infile.name)
 ```
 
+## Integration features and distributing project
+
+## wiring the unit test together
+
+* What we have done in this Project
+    * CLI Parsing
+    * Postgres Interaction
+    * Local storage driver
+    * AWS S3 storage driver
+* Now we need to wire up an executable that can integrate these parts. Up to this point we’ve used TDD to write our code. These have been “unit tests” because we’re only ever testing a single unit of code. If we wanted to write tests that ensure our application worked from start to finish, we could do that and they would be “integration” tests. Given that our code does a lot with the network, and we would have to do a lot of mocking to write integration tests, we’re not going to write them. Sometimes the tests aren’t worth the work that goes into them.
+* We can make our project create a [console_script](https://setuptools.readthedocs.io/en/latest/setuptools.html#automatic-script-creation) for us when a user runs `pip install`
+* This is similar to the way that we made executables before, except we don’t need to manually do the work. To do this, we need to add an entry point in our setup.py
+
+setup.py (partial)
+```py
+    install_requires=['boto3'],
+    entry_points={
+        'console_scripts': [
+            'pgbackup=pgbackup.cli:main',# packagename.modulename.functionname main is the function in the cli module
+        ],
+    }
+```
+* Our main function in the cli module will do the following:
+    * Import the `boto3` package.
+    * Import our `pgdump` and storage modules.
+    * Create a `parser` and parse the arguments.
+    * Fetch the database dump.
+    * Depending on the driver type do one of the following:
+        * create a boto3 S3 client and use storage.s3 or
+        * open a local file and use storage.local
+
+src/pgbackup/cli.py(partial)
+```py
+def main():
+    import boto3
+    from pgbackup import pgdump, storage
+
+    args = create_parser().parse_args()#create_parser returns a parser
+    dump = pgdump.dump(args.url)
+    if args.driver == 's3':
+        client = boto3.client('s3')
+        # TODO: create a better name based on the database name and the date
+        storage.s3(client, dump.stdout, args.destination, 'example.sql')
+    else:
+        outfile = open(args.destination, 'wb')
+        storage.local(dump.stdout, outfile)
+```
+
+* testing
+
+```py
+$ pipenv shell
+(pgbackup-E7nj_BsO) $ pip install -e .
+(pgbackup-E7nj_BsO) $ pgbackup --driver local ./local-dump.sql postgres://demo:password@54.245.63.9:80/sample
+(pgbackup-E7nj_BsO) $ pgbackup --driver s3 pyscripting-db-backups postgres://demo:password@54.245.63.9:80/sample
+```
+
+* The above code works, but we can still improve the following
+    * Generate a good file name for S3
+    * Create some output while the writing is happening
+    * Create a shorthand switch for --driver (-d)
+* For generating our filename, let’s put all database URL interactions in the pgdump module with a function name of `dump_file_name`. This is a pure function that takes an input and produces an output, so it’s a prime function for us to unit test. Let’s write our tests now
+
+tests/test_pgdump.py (partial)
+```py
+def test_dump_file_name_without_timestamp():
+    """
+    pgdump.db_file_name returns the name of the database
+    """
+    assert pgdump.dump_file_name(url) == "db_one.sql"
+
+def test_dump_file_name_with_timestamp():
+    """
+    pgdump.dump_file_name returns the name of the database
+    """
+    timestamp = "2017-12-03T13:14:10"
+    assert pgdump.dump_file_name(url, timestamp) == "db_one-2017-12-03T13:14:10.sql"
+```
+
+* We want the file name returned to be based on the database name, and it should also accept an optional timestamp. Let’s work on the implementation now:
+
+src/pgbackup/pgdump.py (partial)
+```py
+def dump_file_name(url, timestamp=None):
+    db_name = url.split("/")[-1]
+    db_name = db_name.split("?")[0]
+    if timestamp:
+        return f"{db_name}-{timestamp}.sql"
+    else:
+        return f"{db_name}.sql"
+```
+
+* We want to add a shorthand `-d` flag to the driver argument, let’s add that to the create_parser function
+
+src/pgbackup/cli.py (partial)
+```py
+def create_parser():
+    parser = argparse.ArgumentParser(description="""
+    Back up PostgreSQL databases locally or to AWS S3.
+    """)
+    parser.add_argument("url", help="URL of database to backup")
+    parser.add_argument("--driver", "-d",
+            help="how & where to store backup",
+            nargs=2,
+            metavar=("DRIVER", "DESTINATION"), # name the argument
+            action=DriverAction,
+            required=True)
+    return parser
+```
+
+* Lastly, let’s print a timestamp with time.strftime, generate a database file name, and print what we’re doing as we upload/write files
+
+src/pgbackup/cli.py (partial)
+```py
+def main():
+    import time
+    import boto3
+    from pgbackup import pgdump, storage
+
+    args = create_parser().parse_args()
+    dump = pgdump.dump(args.url)
+
+    if args.driver == 's3':
+        client = boto3.client('s3')
+        timestamp = time.strftime("%Y-%m-%dT%H:%M", time.localtime())
+        file_name = pgdump.dump_file_name(args.url, timestamp)
+        print(f"Backing database up to {args.destination} in S3 as {file_name}")
+        storage.s3(client,
+                dump.stdout,
+                args.destination,
+                file_name)
+    else:
+        outfile = open(args.destination, 'wb')
+        print(f"Backing database up locally to {outfile.name}")
+        storage.local(dump.stdout, outfile)
+```
+
+## Building and sharing a wheel distribution
+
+* For our internal tools, there’s a good chance that we won’t be open sourcing every little tool that we write, but we will want it to be distributable. The newest and preferred way to distribute a python tool is to build a [wheel](https://wheel.readthedocs.io/en/stable/#defining-the-python-version).
+* Let’s set up our tool now to be buildable as a wheel so that we can distribute it
+* Before we can generate our wheel, we’re going to want to configure setuptools to not build the wheel for Python 2. We can’t build for Python 2 because we used string interpolation. We’ll put this configuration in a `setup.cfg`
+
+setup.cfg
+```py
+[bdist_wheel]
+python-tag = py36
+```
+* Now we can run the following command to build our wheel:
+
+`(pgbackup-E7nj_BsO) $ python setup.py bdist_wheel`
+
+* Next, let’s uninstall and re-install our package using the wheel file:
+
+```py
+(pgbackup-E7nj_BsO) $ pip uninstall pgbackup
+(pgbackup-E7nj_BsO) $ pip install dist/pgbackup-0.1.0-py36-none-any.whl
+```
+
+* We can use pip to install wheels from a local path, but it can also install from a remote source over HTTP. Let’s upload our wheel to S3 and then install the tool outside of our virtualenv from S3
+
+```py
+(pgbackup-E7nj_BsO) $ python
+>>> import boto3
+>>> f = open('dist/pgbackup-0.1.0-py36-none-any.whl', 'rb')
+>>> client = boto3.client('s3')
+>>> client.upload_fileobj(f, 'pyscripting-db-backups', 'pgbackup-0.1.0-py36-none-any.whl')
+>>> exit()
+```
+
+* We’ll need to go into the S3 console and make this file public so that we can download it to install.
+
+Let’s exit our virtualenv and install pgbackup as a user package:
+
+```py
+(pgbackup-E7nj_BsO) $ exit
+$ pip3.6 install --user https://s3.amazonaws.com/pyscripting-db-backups/pgbackup-0.1.0-py36-none-any.whl
+$ pgbackup --help
+```
+
 # TODO
 
 2 sessions
 
 * 1 session (2hr 15 mins) building and sharing
 * 1 session (1 hr 45 mins) revision and excercise 
-
-# Revision 
-
-30 mins
-
-## Integration features and distributing project
-
-## wiring the unit test together
-
-1 hr
-
-## Building and sharing a wheel distribution
-
-45 
-
