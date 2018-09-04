@@ -1338,8 +1338,36 @@ To start out our project, we’re going to set up our
 * In the pgbackup folder create a srce folder and in that create a pgbackup which will contain all the main scripts.
 * Create another folder called tests which will contain all the tests scripts
 * Create a `__init__.py` and .keep as shown below
+* `__init__.py` is created to make  to make Python treat the directories as containing packages
 
-```shell
+```py
+sound/                          Top-level package
+      __init__.py               Initialize the sound package
+      formats/                  Subpackage for file format conversions
+              __init__.py
+              wavread.py
+              wavwrite.py
+              aiffread.py
+              aiffwrite.py
+              auread.py
+              auwrite.py
+              ...
+      effects/                  Subpackage for sound effects
+              __init__.py
+              echo.py
+              surround.py
+              reverse.py
+              ...
+      filters/                  Subpackage for filters
+              __init__.py
+              equalizer.py
+              vocoder.py
+              karaoke.py
+              ...
+```
+* the `.keep` is created just so that git knows that there will be files in the directory and uploads it. Else it won't
+
+```s
 (pgbackup-E7nj_BsO) $ mkdir -p src/pgbackup tests
 (pgbackup-E7nj_BsO) $ touch src/pgbackup/__init__.py tests/.keep
 ```
@@ -2197,6 +2225,143 @@ Let’s exit our virtualenv and install pgbackup as a user package:
 $ pip3.6 install --user https://s3.amazonaws.com/pyscripting-db-backups/pgbackup-0.1.0-py36-none-any.whl
 $ pgbackup --help
 ```
+
+
+# Exercise: Creating a Python Project
+
+* Create a project folder called hr (short for “human resources”).
+* Set up the directories to put the project’s source code and tests.
+
+```s
+$ mkdir hr
+$ cd hr
+$ mkdir -p src/hr tests
+$ touch src/hr/__init__.py tests/.keep README.rst
+```
+* Create the `setup.py` with metadata and package discovery
+  
+```py
+from setuptools import setup, find_packages
+
+with open('README.rst', encoding='UTF-8') as f:
+    readme = f.read()
+
+setup(
+    name='hr',
+    version='0.1.0',
+    description='Commandline user management utility',
+    long_description=readme,
+    author='Your Name',
+    author_email='person@example.com',
+    packages=find_packages('src'),# if all code was in the same level as setupl.py then there wouldn't be any need of src since we have src we need to give package_dir also
+    package_dir={'': 'src'},
+    install_requires=[]
+)
+```
+
+* Utilize pipenv to create a virtualenv and Pipfile.
+* Add pytest and pytest-mock as development dependencies.
+
+```s
+$ pipenv --python python3.6 install --dev pytest pytest-mock
+```
+* Set the project up in source control and make your initial commit
+  
+```s
+$ git init
+$ curl https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore -o .gitignore
+$ git add --all .
+$ git commit -m 'Initial commit.'
+```
+# Exercise: Test Drive Building a CLI Parser
+
+* The ideal usage of the hr command is this:
+  
+```s
+$ hr path/to/inventory.json
+Adding user 'kevin'
+Added user 'kevin'
+Updating user 'lisa'
+Updated user 'lisa'
+Removing user 'alex'
+Removed user 'alex'
+```
+* The alternative usage of the CLI will be to pass a `--export` flag like so:
+
+```s
+$ hr --export path/to/inventory.json
+```
+* This --export flag won’t take any arguments. Instead, you’ll want to default the value of this field to `False` and set the value to `True` if the flag is present. Look at the [action](https://docs.python.org/2.7/library/argparse.html#action) documentation to determine how you should go about doing this
+
+* An error is raised if no arguments are passed to the parser.
+* No error is raised if a path is given as an argument.
+* The export value is set to True if the --export flag is given.
+
+tests/test_cli.py
+```py
+import pytest
+
+from hr import cli
+
+@pytest.fixture()
+def parser():
+    return cli.create_parser()
+
+def test_parser_fails_without_arguments(parser):
+    """
+    Without a path, the parser should exit with an error.
+    """
+    with pytest.raises(SystemExit):
+        parser.parse_args([])
+
+def test_parser_succeeds_with_a_path(parser):
+    """
+    With a path, the parser should exit with an error.
+    """
+    args = parser.parse_args(['/some/path'])
+    assert args.path == '/some/path'
+
+def test_parser_export_flag(parser):
+    """
+    The `export` value should default to False, but set
+    to True when passed to the parser.
+    """
+    args = parser.parse_args(['/some/path'])
+    assert args.export == False
+
+    args = parser.parse_args(['--export', '/some/path'])
+    assert args.export == True
+```
+
+* For the above test to run create the Makefile, in the same setup.py src level
+```s
+
+.PHONY:default install test
+
+default: test
+
+install:
+        pipenv install --dev --skip-lock
+
+test:
+        PYTHONPAT=./src pytest
+```
+
+* run `pip install -e .`
+
+* implementation of cli.py will be like this
+
+```py
+import argparse
+
+def create_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path', help='the path to the inventory file (JSON)')
+    parser.add_argument('--export', action='store_true', help='export current settings to inventory file')
+    return parser
+```
+# Exercise: Implementing User Management
+
 
 # TODO
 
