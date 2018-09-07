@@ -2854,22 +2854,102 @@ Type "help", "copyright", "credits" or "license" for more information.
 [{"name": "centos", "groups": ["adm", "wheel", "systemd-journal"], "password": "!!"}, {"name": "user", "groups": ["wheel"], "password": "$6$eVLOS6bp$wmZ0AYACxUPpV93bTsT.YisHtblTwb0F8clpzWhPi2gv4ANM66diAq6ugPK6ZNnfDtEQeqWuqJEBewvrjQwRI0"}, {"name": "szaidy", "groups": ["wheel"], "password": "$6$R0L.KL4kFVLRHR5.$NOc/e/fPQ4rPfQxhy/GRyLX.lrqsnrV64E7PJsjvh3Z3nQGbsYLaebTit9U7ykqzkCR4axRrUHbApq9clQwlb/"}](user-5PivF_Od) 
 ```
 
-# Revision
-
-30 minutes
-
 # Exercise: Creating the Console Script
+
+* Implement main function that ties all of the modules together based on input to the CLI parser.
+* Basically, above we called the functions individually. We create a main function in one of the modules and call all the functions from there, then we add this function to setup.py so that when we run the package it executes this function
+
+src/hr/cli.py
+```py
+import argparse
+
+def create_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path', help='the path to the inventory file (JSON)')
+    parser.add_argument('--export', action='store_true', help='export current settings to inventory file')
+    return parser
+
+def main():
+    from hr import inventory, users
+
+    args = create_parser().parse_args()
+
+    if args.export:
+        inventory.dump(args.path)
+    else:
+        users_info = inventory.load(args.path)
+        users.sync(users_info)
+
+```
+
+* Modify the setup.py so that when installed there is an hr console script.
+* I think an alternate way is to create a __init__.py in the hr package and make it executable. In the __init__.py call the functions
+
+setup.py
+```py
+from setuptools import setup, find_packages
+
+with open('README.rst', encoding='UTF-8') as f:
+    readme = f.read()
+
+setup(
+    name='hr',
+    version='0.1.0',
+    description='Commandline user management utility',
+    long_description=readme,
+    author='Your Name',
+    author_email='person@example.com',
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
+    install_requires=[],
+    entry_points={
+        'console_scripts': 'hr=hr.cli:main',
+    },
+)
+
+```
+
+* Executing
+
+```s
+
+$ sudo pip3.6 install -e .
+$ sudo hr --help
+usage: hr [-h] [--export] path
+
+positional arguments:
+  path        the path to the inventory file (JSON)
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --export    export current settings to inventory 
+```
+
 
 # Exercise: Building a Wheel Distribution
 
+MANIFEST.in
+```s
+include README.rst
+recursive-include tests *.py
+```
+
+* ` $ python setup.py bdist_wheel`
+
+* Lastly, here’s how you would install this wheel for the root user to be able to use (run from project directory):
+* `sudo pip3.6 install --upgrade dist/hr-0.1.0-py3-none-any.whl`
+* to use it we use `hr --help`
 1 hr
-
-# Quiz
-
-30 minutes
 
 # TODO
 
-1 sessions
+# Revision
 
-* 1 session (2 hrs) Above 3
+# Setup a Environment
+# Installing Python 3 on Centos7
+# Create a Large Scripting Project
+# Excercises for Scriptingg Project
+2-3 sessions
+
+# Redo the Documentation
+2 sessions
