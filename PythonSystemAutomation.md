@@ -1,551 +1,10 @@
-# Python Quick Start for Linux Admin
 
-# Why Python?
+# Introduction
 
-* Easy to learn and write
-* REPL, can be used interactively
-* Powerful built-in data types
-    * Strings, integers, floats
-    * List, tuple,set, dictionary
-* Object-Oriented
-    * Many pre-defined classes
-* Batteries Included
-    * Huge library of moduels
-    * Many more in your distro's repo
-    * Huge number at Python package index pypi.python.org
+This is a collection of Notes taken from Course Tutorials in Linux Academy and Plural Sight
 
-![](./img/ListOfModules1.png)
 
-![](./img/ListofModules2.png)
-
-# ipython
-
-* ipython3 is REPL+Shell
-* sudo apt-get install ipython3
-```python
->>>automagic # to turn off, after this u need to give % befor every command
->>>%automagic to turn on
->>>alias findmysyslinks ls -l /etc/ | grep '^l'
->>>run example.py
->>>command(?) will give help
->>>import xyz # to get all modules of xyx just give xyz. and tab
-```
-
-# Managing file system with Module
-
-* import os is used to provie a common interface to both Linux and Windows
-
-![](./img/osCommands.png)
-
-## OS functions
-
-![](./img/osCommands2.png)
-
-![](./img/shutilcommands.png)
-
-## Interacting with Linux System
-
-## Slicing
-
-* Extracts part of a sequence to create a new sequence
-* Does not modify the original sequence
-
-![](./img/slicing.png)
-
-![](./img/slicingCommands.png)
-
-## Command Line Arguments
-
-![](./img/commandLine.png)
-
-optparse
-
-argparse
-
-```python
-import argparse
-
-# https://docs.python.org/3/library/argparse.html#module-argparse
-
-parser = argparse.ArgumentParser(description="Process Some integers")
-parser.add_argument('integer',
-                    metavar='N',  # Optional DISPLAY name , seen in help
-                    type=int,
-                    nargs='+',  # 1 to n arguments can be passed to integer since it doesn't have -- or - you can give arguments directly
-                    help="an integer for an accumulator")
-parser.add_argument("--sum",
-                    metavar="Sum/max",
-                    dest='accumulate',
-                    action='store_const',
-                    const=sum,
-                    default=max,
-                    help="sum the integers(default find max)")
-args = parser.parse_args()
-print(args.accumulate(args.integer))
-```
-
-## Accessing the Environment
-
-```python
->>> import os
->>> os.environ
-```
-
-## Files Streams and Filters
-
-![](./img/fileLikeObjs.png)
-![](./img/openFile.png)
-
-```python
-import sys
-
-print("This is standard output written on stdout")
-
-print("this is written to stderr", file=sys.stderr)
-
-f = open("out1", "w")
-print("This is written out1", file=f)
-f.close()
-
-with open("out2", "w") as f:
-    print("this is written to out2", file=f)
-
-with open("out3", "w") as f:
-    sys.stdout = f
-    print("This is written in out3")
-```
-
-Simple Python program to reverse line by either giving n text files or giving input from command prompt. uses sys.argv and python slicing
-
-
-```python
-import sys
-
-version = 2
-
-if version == 1:  # Boring Loop
-    def revline(line):
-        outline = ''
-        index = len(line)
-        while index:
-            index -= 1
-            outline += line(index)
-        print(outline, end='')
-
-if version == 2:  # recursive loop
-    def revline(line):
-        if line:
-            revline(line[1:])
-            print(line[0], end='')
-
-if version == 3:  # Pythonic slicing
-    def revline(line):
-        print(line[::-1], end='')
-
-
-def process_code(f):
-    for line in f:
-        revline(line)
-
-
-if (len(sys.argv)) == 1:
-    process_code(sys.stdin)
-else:
-    for path in sys.argv[1:]:
-        try:
-            with open(path, "r") as file:
-                process_code(file)
-        except Exception as e:
-            print("Got an exception:{}".format(e), file=sys.stderr)
-```
-
-## Signals
-
-Term = Terminate
-core = create cores
-
-![](./img/signalsPython.png)
-
-```python
-# time out using sigalarm
-
-import sys
-from signal import *
-
-
-def timeout_handler(signum, frame):  # standard signal method, signumber and frame is signal frame(?)
-    raise IOError("User not responding")
-
-
-def get_name():
-    signal(SIGALRM, timeout_handler)  # signal method name
-    alarm(5)
-    n = sys.stdin.readline()
-    alarm(0)
-    return n
-
-
-signal(SIGINT, SIG_IGN)  # CNTRL+Z IGNORED
-print("enter your name: ", end='')
-sys.stdout.flush()
-try:
-    name = get_name()
-except IOError:
-    print("You did not reply, I will call you sleepy")
-    name = 'Sleepy'
-
-print("hello {}".format(name))
-```
-
-# Combining Python with other tools
-
-## String vs Byte Objects
-
-* Python String is a sequence of unicode characters
-* Textual data in Linux is a sequence of bytes
-
-* Everything stored in computer is in the form of bytes
-* There are about 256 symbols which have a direct SINGLE byte for them, what about other languages?
-* Use two bytes, but that was not enough
-* Assign charcters to code points(integers) 1.1M code points, 110k assigned
-
-https://stackoverflow.com/questions/10060411/byte-string-vs-unicode-string-python
-
-```python
->>> a = "foo"
->>> type(a)
-<class 'str'>
->>> a = b'foo'
->>> type(a)
-<class 'bytes'>
->>> a = r'foo'
->>> type(a)
-<class 'str'>
->>> a = b'foo'
->>> type(a)
-<class 'bytes'>
->>> a.decode()
-'foo'
->>> type(a)
-<class 'bytes'>
->>> a = a.decode()
->>> type(a)
-<class 'str'>
->>> a = 'foo'
->>> type(a)
-<class 'str'>
->>> a = a.encode()
->>> type(a)
-<class 'bytes'>
-```
-
-## Subprocess
-
-```python
-#Demonstrating subprocess printing files > 10k bytes
-
-from subprocess import Popen, PIPE
-
-lister = Popen(["ls", "-l"], stdout=PIPE)
-
-for bytes in lister.stdout:
-    line = bytes.decode()
-    if line.startswith("total"):
-        continue
-    spline = line.split()
-    if int(spline[4]) > 1000:
-        print(spline[8])
-```
-## Mail
-
-![](./img/pythonSMTPMail.png)
-
-## Sample Program to check disk space in AIX /u01 folder
-
-```py
-#! /scs/bin/python3
-import subprocess
-import argparse
-import time
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--threshold', '-t', type=int, default=50)
-parser.add_argument('--repeat', '-r', action="store_true", default=False)
-args = parser.parse_args()
-
-threshold = 50  # default threshold percentage
-partition = "/u01"  # default partition
-
-df = subprocess.Popen(["df", "-g"], stdout=subprocess.PIPE)
-
-
-for line in df.stdout:
-    # split into space seperated fields
-    splitline = line.split()
-    u = splitline[6]
-    if u.decode() == partition:
-        while True:
-            if int(splitline[3][:-1]) > args.threshold:
-                print("Warning!, size of /u01 greater than {}%".format(args.threshold))
-            if args.repeat:
-                time.sleep(5)
-            else:
-                exit(0)
-```
-
-## Open a Tar archive
-
-```py
-
->>> import tarfile
->>> import os
->>> t = tarfile.open("test.tar","w")
->>> for file in ["out1","out2","out3"]:
-...     t.add(file)
-...
->>> t.close()
->>> exit()
->>> t = tarfile.open("test.tar")
->>> t.getnames()
-['out1', 'out2', 'out3']
->>> t.extractall()
-
-```
-
-```py
-# Simple tar program
-import sys
-import tarfile
-
-if len(sys.argv) > 2:
-    list = ["."] # if not files are passed it will archive the directory
-else:
-    list = sys.arv[1:]
-
-with tarfile.open("temptar.tar", "w") as t:
-    for file in list:
-        t.add(file)
-
-```
-
-# Manipulating Strings in Python
-
-* Python string is IMMUTABLE sequence of unicode charcters
-
-## format
-
-```py
-# Example of specifying field width precision
-
-import math
-
-x = 1
-for i in range(10):
-    x = x * 2
-    y = math.sqrt(x)
-    print("{0:4}{1:10}{2:10.4f}".format(i, x, y))
-```
-
-## String Test
-
-![](./img/stringTextEx.png)
-
-
-## Date time
-
-```py
-# What day you were born on?
-
-from datetime import datetime
-
-line = input("Enter your DOB in DD/MM/YY format: ")
-birthday = datetime.strptime(line, "%d/%m/%Y")
-print("You were born on {0:%A}".format(birthday))
-
-```
-
-![](./img/dateTimePercent.png)
-
-## Regular Expression
-
-* Used for Input Validation as above, searching and Text substitution
-
-```py
->>> import re
->>> d3 = re.compile(r"[0-9]{3,}") # compiling
->>> re.search(d3, "abc1234xyz")
-<_sre.SRE_Match object; span=(3, 7), match='1234'>
->>> re.search(d3, "abc12xyz")
-```
-
-Substituting US to UK dates
-
-```py
->>> import re
->>> convertDate = re.compile(r"(\d\d)-(\d\d)-(\d{4})")
->>> us_dates = "11-24-1997, 03-01-2018, 06-28-2010"
->>> uk_dates = re.sub(convertDate, r"\2-\1-\3", us_dates)
->>> uk_dates
-'24-11-1997, 01-03-2018, 28-06-2010'
->>> uk_dates = re.sub(convertDate, r"\2-\1-\3", us_dates, count=2)
->>> uk_dates
-'24-11-1997, 01-03-2018, 06-28-2010'
-```
-
-# Processing Files
-
-## Logging
-
-* Long running background services require logging to file, syslog or systemd journal
-  
-![](./img/LogArchitecture.png)
-
-![](./img/LogAttributes.png)
-
-![](./img/Loggerheriarchy.png)
-
-![](./img/LogHandlers.png)
-
-![](./img/LogSeverity.png)
-
-```py
->>> import logging
-WARNING:root:Somethin's wrong?
->>> logging.info("some info") # By default logging level is Warning. To change it exit out of repl and type belo
-```
-
-```py
->>> import logging
->>> logging.basicConfig(level = logging.DEBUG, format = "%(levelname)s, %(asctime)s, %(message)s")
->>> logging.warning("this is warning")
-WARNING, 2018-08-20 07:30:38,893, this is warning
->>> logging.info("works?")
-INFO, 2018-08-20 07:31:07,840, works?
-```
-
-## Logging DMO using systemd, standard for Linux
-
-To read from Journal use `Journalctcl | tail`
-
-```py
-# Logging Demo
-
-import logging
-from systemd.journal import JournalHandler  # Preferred Logging Method - 1 import
-
-# Logging to a file
-
-logging.basicConfig(filename="LogDmo.log", level=logging.DEBUG,
-                    format="%(levelname)s %(asctime)s %(message)s")
-
-logging.info("Log Started")
-
-# Logging to systemd journal - 7 steps process
-# This can be done with 3 steps. 3, 6, 7. Declare Handler, add handler to log, and write log
-
-jlogger = logging.getLogger("journal-logger")  # 2 log name
-jhandler = JournalHandler()  # 3 create handler
-jformatter = logging.Formatter(fmt="%(levelname)s %(message)s")  # 4 create formatter
-jhandler.setFormatter(jformatter)  # 5 update handler with formatter
-
-jlogger.addHandler(jhandler)  # 6 update logger with handler
-jlogger.warning("This is warning sent to the Journal")  # 7 write to log
-
-
-# To stop updating log LogDmo.log as the above will be written there as well
-
-jlogger.propagate = False
-jlogger.warning("warning ONLY the Journal")
-
-# Printing the stack trace with exception handler
-
-
-def bad_idea():
-    try:
-        1 / 0
-    except:
-        logging.error("Failed to divide", exc_info=True)
-
-
-bad_idea()
-```
-
-## Processing an Apache Log
-
-```py
-# use log and counting x
-
-import collections
-
-hist = collections.defaultdict(int)  # This is same as dict but will call a int value 0 whenever the key is not available
-
-with open("xyz.log") as file:
-    for line in file:
-        url = line.split()[6].split('?')[0]
-        hist[url] += 1  # regular dict fails at his step if new url is not assigned to 1 already
-
-for url in sorted(hist, key=hist.get, reverse=True):
-    if hist[url] < 50:  # ignoring small entries
-        break
-    print("{0:-40s}: {1:6d}".format(url, hist[url]))
-```
-
-# Automatic Updates to /etc/fstab 
-
-```py
-# Program to replace device names in /etc/fstab
-
-import re
-from subprocess import Popen, PIPE
-
-regex = re.compile(r"(/dev/sd[ab][1-9])(.*)")
-
-outfile = open("fstab.out",mode="w")
-
-for line in open("fstab.in"):
-    match = re.search(regex, line)
-    if match:
-        print("Need to replace {}".format(match.group(1)))
-        lsblk = Popen(["lsblk","-n","--output","UIUD",match.group(1)],stdout=PIPE)
-        uiud = lsblk.stdout.readline().decode()
-        replacement = "UIUD=" + uuid[:-1] + re.sub(regex, r"\2",line)
-        print("replacement line is {}".format(replacement))
-        print(replacement, end='', file=outfile)
-    else: # copy the line through unchanged
-        print(line, end='', file=outfile)
-
-outfile.close()
-```
-
-# pathlib
-
-https://github.com/snth/pyconza17/blob/master/slides.md
-
-```py
->>> from pathlib import Path
->>> p = Path('.')
->>> p
-WindowsPath('.')
->>> p.absolute()
-WindowsPath('C:/Users/asyed/Documents/Book/PythonBeyondBasics')
->>> str(p.absolute())
-'C:\\Users\\as\\Documents\\Book\\PythonBeyondBasics'
->>> p.absolute().as_uri()
-'file:///C:/Users/as/Documents/Book/PythonBeyondBasics'
->>> p.absolute().as_posix()
-'C:/Users/asyed/Documents/Book/PythonBeyondBasics'
->>> [x for x in p.iterdir() if x.is_dir()]
-[WindowsPath('.git'), WindowsPath('img')]
->>> [str(x) for x in p.iterdir() if x.is_dir()]
->>> [str(x) for x in p.iterdir() if x.is_file()]
-['BeyondFunctions.md', 'OrganizingLayerPrograms.md', 'prerequisites.md', 'PythonLinuxAdmin.md', 'README.md']
-
-```
-
-# SysAdmin Course - Linux Academy
-
-
-## Setting up Centios Server
+# Basic Tools for Administration
 
 yum is a package management tools it is used to install softwares easily
 
@@ -557,20 +16,19 @@ yum is a package management tools it is used to install softwares easily
 * lsof = list open files to see which file is open by which process
 * vim-enhanced = better version of vim
 * words = words is a standard file on all Unix and Unix-like operating systems, and is simply a newline-delimited list of dictionary words. It is used, for instance, by spell-checking programs.
-* `:e file.log` to move to another file from the opened vim file and `:bn` buffer next to move back to original
 
-```shell
+```s
 $ git config --global user.name "Your Name"
 $ git config --global user.email "your_email@example.com"
 $ curl https://raw.githubusercontent.com/linuxacademy/content-python3-sysadmin/master/helpers/bashrc -o ~/.bashrc
 $ curl https://raw.githubusercontent.com/linuxacademy/content-python3-sysadmin/master/helpers/vimrc -o ~/.vimrc
 ```
 * When you commit and push code to github it will ask for password
-* the vimrc is used to edit the vim editor settings. In AIX this will be called ~/.exrc as it uses VI
-* to change the color scheme in the vimrc file write colorschme koehler (to see other colors in vim do :colo <tab>)
-  
-Installing Python and other dependencies
-```shell
+
+# Installing Python and other dependencies
+
+```s
+
 $ sudo su -
 [root] $ yum groupinstall -y "development tools"
 [root] $ yum install -y \
@@ -598,16 +56,29 @@ $ sudo su -
 $ sudo pip3.6 install --upgrade pip # if problem make sure secure_path in /etc/sudoers file includes /usr/local/bin
 ```
 
-to run a python file directly that is without using `python foo.py` you need to make `foo.py` executable. Once you make it executable you can fun it as `./foo.py`
+* To run a python file directly that is without using `python foo.py` you need to make `foo.py` executable.
+* Once you make it executable you can run it as `./foo.py`
+* Once we’ve written our script, we’ll need to make it executable using `chmod u+x foo.py` and then in the start of the script use shebang. Which is basically `#!<location of python, find by using which python>`
 
-Once we’ve written our script, we’ll need to make it executable using `chmod u+x foo.py`
+# VIM shortcuts tricks
+
+* VIM = VI improved
+* vim, vi are similar editors some OS use VIM and some use VI. VIM is a superset of VI, that means VIM has more features. 
+* https://vimawesome.com/
+* `yum install vim-enhanced` better version of vim
+* * `:e file.log` to move to another file from the opened vim file and `:bn` buffer next to move back to original
+* $ curl https://raw.githubusercontent.com/linuxacademy/content-python3-sysadmin/master/helpers/vimrc -o ~/.vimrc
+* the vimrc is used to edit the vim editor settings. In AIX this will be called ~/.exrc as it uses VI
+* to change the color scheme in the vimrc file write colorschme koehler (to see other colors in vim do :colo <tab>)
 
 
-## Standard Library Package
+# Standard Library Package
 
+## Calculate Program Time
 [Documentation](https://docs.python.org/3/library/index.html)
 
 Use time module to create a start stop program
+
 
 ```py
 import time
@@ -622,6 +93,7 @@ print(f"Program started at {time.strftime('%X',currentTime)}")
 print(f"Program stopped at {time.strftime('%X',stopTime)}")
 print(f"Seconds Program Running {time.strftime('%H:%M:%S',time.gmtime(time.mktime(stopTime) - time.mktime(currentTime)))}")
 ```
+## Access Environment Variable
 
 Use OS package specially `os.environ`
 
@@ -702,7 +174,6 @@ Traceback (most recent call last):
 ValueError: I/O operation on closed file
 ```
 
-
 ## Parsing Command Line Parameters
 
 [sys module](https://docs.python.org/3/library/sys.html)
@@ -732,6 +203,7 @@ Traceback (most recent call last):
     print(f"First argument: {sys.argv[1]}")
 IndexError: list index out of range
 ```
+
 
 ## argparse
 
@@ -994,7 +466,7 @@ subprocess.CalledProcessError: Command '['cat', 'fake.txt']' returned non-zero e
 `subprocess.Popen` is used to store the process command to be used in the program later
 
 
-## Advanced Iteration with list Comprehension
+# Advanced Iteration with list Comprehension
 
 * [List Comprehension Documentation](vhttps://docs.python.org/3/tutorial/datastructures.html#list-comprehensions)
 
@@ -1037,7 +509,7 @@ Rewriting the above code with list-comprehension
 print([word for word in words if snippet in word.lower()]) # This is equivalent to the above 5 lines
 
 ```
-## Useful Standard Library Packages
+# Useful Standard Library Packages
 
 Generating Random test data
 
@@ -1057,7 +529,7 @@ for identifier in range(count):
     amount = random.uniform(1.0, 1000)  # returns a random float between a and b
     content = {
         'topic': random.choice(words),  # returns as single random element from a list
-        'value': "%.2f" % amount
+        'value': "%.2f" % amount # 'value': f"{amount:.2f}"
 
     }
     with open(f'./new/receipt--{identifier}.json', 'w') as f:
@@ -1163,44 +635,12 @@ for path in glob.iglob('./new/receipt-[0-9]*.json'):
 print(f"Receipt subtotal: ${round(subtotal, 2)}")
 ```
 
-## Exercise: Handling Errors When Files Don't Exist
-
-* Receives a file_name and line_number as command line parameters.
-* Prints the specified line_number from file_name to the screen. The user will specify this as you would expect, not using zero as the first line.
-* Make sure you check for following errors
-    * The file doesn’t ex
-    * desn’t contain the line_number specified (file is too short).
-
-```py
-import sys
-
-fileName = sys.argv[1]
-number = int(sys.argv[2])
-
-try:
-    f = open(fileName)
-except IOError:
-    print("There is no such file, please check the path or fileName")
-else:
-    with f:
-        lines = f.readlines()
-        try:
-            printLine = lines[number - 1]
-        except IndexError:
-            print("The given line number exeeds the file lines, try with something smaller")
-        else:
-            print(lines[number - 1])
-```
-## Exercise: Interacting with External Commands
+## Interacting with External Commands
 
 * `python -m http.server` to start python server
 * `lsof -n -i4TCP:PORT_NUMBER` to check process running on port number
 
-## Exercise: Setting Exit Status on Error
-
-When error exist with a status `sys.exit(1)`
-
-## Third Party Packages
+# Third Party Packages
 
 ## pip
 
@@ -1244,7 +684,13 @@ $ pip3.6 uninstall boto3
 
 * [Documentation](https://conda.io/docs/user-guide/tasks/manage-environments.html#creating-an-environment-with-commands)
 
-## third party packages
+## pipenv
+
+* `pipenv` this is a combination of venv and pip. To install use `pip3.6 install --user pipenv`
+* `$ pipenv --python $(which python3.6)` to create env this creates a `Pipfile`
+* to activate `pipenv shell` and to deactivate use `exit`
+
+## Excercise: third party packages
 
 * We’re going to write up the start of a script that can provide us with weather information using data from openweathermap.org. For this video, we’re going to be installing another package called [requests](http://docs.python-requests.org/en/master/). This is a nice package for making web requests from Python and one of the most used Python packages. You will need to get your API key from [OpenWeatherMap](https://openweathermap.org/api) to follow along
 
@@ -1289,12 +735,9 @@ print(printString)
 * one problem with this is we need to start the env every time we neeed to run it, this can be worked around by adding the actual conda environment in the start of python file, only in linux.
 * `#!/home/$USER/venvs/experiment/python`You’ll need to substitute in your actual username for $USER
 
+# CapStone Project
 
-## Creating a Large Scripting Project
-
-## Examining the Problem and Prep work
-
-### Project
+## Understanding the Project
 
 We have many database servers that we manage, and we want to create a single tool that we can use to easily back up the databases to either AWS S3 or locally. We would like to be able to:
 
@@ -1511,10 +954,9 @@ test:
     * git init for SCM
 
 
-## Implementing feaures with test driven development
+## Intro to TDD and First test (pytest)
 
-## Intro to TDD and First test
-
+* Implementing feaures with test driven development
 * instead of `unittest` we will use `pytest` 
 * The docs for  [pytest](https://docs.pytest.org/en/latest/)
 * To install, first go to the virtualenv `pipenv shell` then install the pytest package `pipenv install --dev pytest`
